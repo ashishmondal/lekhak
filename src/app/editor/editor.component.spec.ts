@@ -284,4 +284,21 @@ describe('EditorComponent', () => {
     expect(comp.stories.stories().some((s: any) => s.id === doomed)).toBe(false);
     expect(comp.stories.stories().length).toBe(1);
   });
+
+  it('closes the overflow menu on an outside click and on Escape', async () => {
+    const fixture = await render(new FakeProvider());
+    const menu = (fixture.nativeElement as HTMLElement).querySelector(
+      'details.overflow',
+    ) as HTMLDetailsElement;
+
+    menu.open = true;
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(menu.open).toBe(false);
+
+    menu.open = true;
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    expect(menu.open).toBe(false);
+  });
 });

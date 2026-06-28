@@ -95,6 +95,10 @@ export class EditorComponent implements OnInit {
   private readonly storyBox =
     viewChild<ElementRef<HTMLTextAreaElement>>('storyBox');
 
+  /** The chapter/story overflow menu, closed on outside-click and Escape. */
+  private readonly moreMenu =
+    viewChild<ElementRef<HTMLDetailsElement>>('moreMenu');
+
   private pending = '';
   private rafId: number | null = null;
   private firstChunk = true;
@@ -118,6 +122,36 @@ export class EditorComponent implements OnInit {
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('beforeunload', onUnload);
       void this.autosave.flush(); // route change / teardown
+    });
+
+    // Dismiss the overflow menu on an outside click or Escape (native
+    // <details> stays open otherwise).
+    const closeMenu = (focusSummary = false) => {
+      const el = this.moreMenu()?.nativeElement;
+      if (!el?.open) {
+        return;
+      }
+      el.open = false;
+      if (focusSummary) {
+        el.querySelector('summary')?.focus();
+      }
+    };
+    const onDocClick = (e: MouseEvent) => {
+      const el = this.moreMenu()?.nativeElement;
+      if (el?.open && !el.contains(e.target as Node)) {
+        closeMenu();
+      }
+    };
+    const onKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeMenu(true);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKeydown);
+    this.destroyRef.onDestroy(() => {
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKeydown);
     });
 
     this.initialized = this.loadInitial();
