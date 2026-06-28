@@ -21,6 +21,76 @@
     </div>
   </header>
 
+  <nav class="library" aria-label="Story and chapter">
+    <label class="lib-field">
+      <span class="sr-only">Story</span>
+      <select
+        class="story-select"
+        aria-label="Story"
+        [value]="stories.activeStoryId()"
+        (change)="onSelectStory($any($event.target).value)"
+      >
+        @for (s of stories.stories(); track s.id) {
+          <option [value]="s.id">{{ s.title }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="pager" role="group" aria-label="Chapter">
+      <button
+        type="button"
+        class="page"
+        aria-label="Previous chapter"
+        [disabled]="stories.activeChapterNumber() <= 1"
+        (click)="stepChapter(-1)"
+      >‹</button>
+      <span class="pager-label"
+        >Ch {{ stories.activeChapterNumber() }}/{{ stories.chapterCount() }}</span
+      >
+      <button
+        type="button"
+        class="page"
+        aria-label="Next chapter"
+        [disabled]="stories.activeChapterNumber() >= stories.chapterCount()"
+        (click)="stepChapter(1)"
+      >›</button>
+    </div>
+
+    <button
+      type="button"
+      class="lib-btn"
+      [disabled]="stories.atChapterCap()"
+      [title]="
+        stories.atChapterCap()
+          ? 'Max ' + maxChapters + ' chapters — start a new story'
+          : 'Add a chapter'
+      "
+      (click)="newChapter()"
+    >+ Chapter</button>
+
+    @if (showNewStory()) {
+      <form class="new-story" (submit)="$event.preventDefault(); createStory()">
+        <input
+          class="new-story-input"
+          aria-label="New story title"
+          placeholder="Story title"
+          [value]="newStoryTitle()"
+          (input)="newStoryTitle.set($any($event.target).value)"
+        />
+        <button type="submit" class="lib-btn">Create</button>
+        <button
+          type="button"
+          class="lib-btn ghost-btn"
+          (click)="showNewStory.set(false)"
+        >Cancel</button>
+      </form>
+    } @else {
+      <button type="button" class="lib-btn" (click)="showNewStory.set(true)">
+        + Story
+      </button>
+    }
+  </nav>
+
   @if (errorMessage(); as message) {
     <p class="banner" role="alert">{{ message }}</p>
   }
@@ -59,8 +129,18 @@
     <div class="actions">
       @if (gen.streaming()) {
         <button type="button" class="stop" (click)="stop()">Stop</button>
-      } @else {
+      } @else if (stories.isLatestActive()) {
         <button type="button" class="write" (click)="writeNext()">Write next</button>
+      } @else {
+        <button
+          type="button"
+          class="write"
+          disabled
+          title="Switch to the latest chapter to continue writing"
+        >Write next</button>
+        <span class="hint"
+          >Editing an earlier chapter — Write next runs on the latest only</span
+        >
       }
     </div>
   </div>

@@ -135,7 +135,14 @@
 
 .actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: #a8a299;
 }
 
 button {
@@ -161,4 +168,97 @@ button {
 .beat:focus {
   outline: 2px solid #1c1b19;
   outline-offset: 1px;
+}
+
+/* --- library nav (story select + chapter pager + create controls) --- */
+.library {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #ece7dd;
+}
+
+.lib-field {
+  display: flex;
+  min-width: 0;
+}
+
+.story-select {
+  max-width: 16rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.5rem;
+  background: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pager-label {
+  font-size: 0.8rem;
+  color: #6b675f;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.page {
+  padding: 0.25rem 0.55rem;
+  background: #f1ede5;
+  color: #1c1b19;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.lib-btn {
+  padding: 0.35rem 0.7rem;
+  background: #f1ede5;
+  color: #1c1b19;
+  font-size: 0.82rem;
+}
+
+.ghost-btn {
+  background: transparent;
+  color: #6b675f;
+}
+
+.new-story {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.new-story-input {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.5rem;
+  background: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

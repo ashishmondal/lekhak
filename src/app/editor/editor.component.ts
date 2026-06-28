@@ -11,13 +11,13 @@ import {
 import { Router, RouterLink } from '@angular/router';
 
 import type { AiErrorKind } from '../ai/ai-error';
-import type { Chapter, Story } from '../models/domain';
 import type { ContextInput } from '../context/context-builder';
 import { GenerationService } from '../services/generation.service';
 import { Autosave } from '../services/autosave';
 import { SettingsService } from '../services/settings.service';
-import { StorageService } from '../services/storage.service';
 import { saveStateLabel } from '../services/save-state';
+import { MAX_CHAPTERS, StorageService } from '../services/storage.service';
+import { StoryStore } from '../story/story.store';
 import { WorldStore } from '../world/world.store';
 
 const ERROR_COPY: Record<AiErrorKind, string> = {
@@ -51,6 +51,7 @@ export class EditorComponent implements OnInit {
   protected readonly gen = inject(GenerationService);
   protected readonly autosave = inject(Autosave);
   protected readonly world = inject(WorldStore);
+  protected readonly stories = inject(StoryStore);
   private readonly storage = inject(StorageService);
   private readonly settings = inject(SettingsService);
   private readonly router = inject(Router);
@@ -60,6 +61,11 @@ export class EditorComponent implements OnInit {
   protected readonly nextBeat = signal('');
   /** Faded ghost of the last beat that was sent. */
   protected readonly lastBeat = signal('');
+  /** Whether the inline "new story" title form is open. */
+  protected readonly showNewStory = signal(false);
+  protected readonly newStoryTitle = signal('');
+  /** The per-story chapter cap, surfaced for the New chapter control. */
+  protected readonly maxChapters = MAX_CHAPTERS;
 
   protected readonly errorMessage = computed(() => {
     const err = this.gen.error();
@@ -81,16 +87,6 @@ export class EditorComponent implements OnInit {
   private readonly storyBox =
     viewChild<ElementRef<HTMLTextAreaElement>>('storyBox');
 
-  // Single-draft scaffold persisted to IndexedDB. World/story/era selection and
-  // multiple drafts arrive with T7; this keeps the body durable across reloads.
-  private readonly story: Story = {
-    id: 'default-story',
-    worldId: 'default-world',
-    eraId: '',
-    title: 'Untitled',
-    updatedAt: 0,
-  };
-  private readonly chapterId = 'default-chapter';
   private pending = '';
   private rafId: number | null = null;
   private firstChunk = true;
@@ -116,11 +112,77 @@ export class EditorComponent implements OnInit {
       void this.autosave.flush(); // route change / teardown
     });
 
-    const existing = await this.storage.getChapter(this.chapterId);
-    if (existing) {
-      this.storyText.set(existing.body);
-    }
+    this.initialized = this.loadInitial();
+    await this.initialized;
+  }
+
+  /**
+   * Resolves once the initial world + story library has loaded. Exposed so
+   * tests can await the async bootstrap that `ngOnInit` kicks off.
+   */
+  protected initialized: Promise<void> = Promise.resolve();
+
+  /** Bootstrap the world, then the story library, then open the active draft. */
+  private async loadInitial(): Promise<void> {
     await this.world.init();
+    await this.stories.init(
+      this.world.world()?.id ?? '',
+      this.world.currentEraId(),
+    );
+    this.loadActiveBody();
+  }
+
+  /** Pull the active chapter's persisted body into the editing buffer. */
+  private loadActiveBody(): void {
+    this.storyText.set(this.stories.activeChapter()?.body ?? '');
+    this.firstChunk = true;
+    this.stick = true;
+  }
+
+  /** Switch stories, persisting the open chapter first. */
+  protected async onSelectStory(id: string): Promise<void> {
+    if (this.gen.streaming() || id === this.stories.activeStoryId()) {
+      return;
+    }
+    await this.autosave.flush(); // save the chapter we're leaving
+    await this.stories.selectStory(id);
+    this.loadActiveBody();
+  }
+
+  /** Page one chapter earlier (-1) or later (+1), persisting first. */
+  protected async stepChapter(direction: -1 | 1): Promise<void> {
+    if (this.gen.streaming()) {
+      return;
+    }
+    await this.autosave.flush();
+    this.stories.stepChapter(direction);
+    this.loadActiveBody();
+  }
+
+  /** Append a new chapter to the active story and open it. */
+  protected async newChapter(): Promise<void> {
+    if (this.gen.streaming() || this.stories.atChapterCap()) {
+      return;
+    }
+    await this.autosave.flush();
+    await this.stories.createChapter();
+    this.loadActiveBody();
+  }
+
+  /** Create a new story from the inline title form and open its first chapter. */
+  protected async createStory(): Promise<void> {
+    if (this.gen.streaming()) {
+      return;
+    }
+    await this.autosave.flush();
+    await this.stories.createStory(
+      this.newStoryTitle(),
+      this.world.world()?.id ?? '',
+      this.world.currentEraId(),
+    );
+    this.newStoryTitle.set('');
+    this.showNewStory.set(false);
+    this.loadActiveBody();
   }
 
   protected onStoryInput(value: string): void {
@@ -149,9 +211,18 @@ export class EditorComponent implements OnInit {
     if (this.gen.streaming()) {
       return;
     }
+    // The engine continues the highest-order chapter, so Write next only runs on
+    // the latest chapter. Earlier chapters are editable text, not continuable.
+    if (!this.stories.isLatestActive()) {
+      return;
+    }
     // BYOK guard: no key means nothing to send. Send the author to Settings.
     if (!this.settings.hasKey()) {
       void this.router.navigate(['/settings']);
+      return;
+    }
+    const story = this.stories.activeStory();
+    if (!story) {
       return;
     }
     // Persist any unsaved typing before we send it as context.
@@ -160,20 +231,12 @@ export class EditorComponent implements OnInit {
     const beat = this.nextBeat().trim();
     const body = this.storyText();
 
-    const worldId = this.world.world()?.id ?? this.story.worldId;
-    const eraId = this.world.currentEraId();
-    const story: Story = { ...this.story, worldId, eraId };
-
-    const chapters: Chapter[] = [
-      {
-        id: this.chapterId,
-        storyId: story.id,
-        order: 0,
-        title: story.title,
-        body,
-        updatedAt: 0,
-      },
-    ];
+    // Feed the engine the story's real chapters. The active (latest) chapter
+    // carries the live, possibly-unsaved body so the continuation is current.
+    const activeId = this.stories.activeChapterId();
+    const chapters = this.stories
+      .chapters()
+      .map((c) => (c.id === activeId ? { ...c, body } : c));
 
     const input: ContextInput = {
       story,
@@ -257,14 +320,6 @@ export class EditorComponent implements OnInit {
   }
 
   private persist(): Promise<void> {
-    const chapter: Chapter = {
-      id: this.chapterId,
-      storyId: this.story.id,
-      order: 0,
-      title: this.story.title,
-      body: this.storyText(),
-      updatedAt: Date.now(),
-    };
-    return this.storage.putChapter(chapter);
+    return this.stories.saveActiveBody(this.storyText());
   }
 }
