@@ -271,6 +271,47 @@ export class StoryStore {
   }
 
   /**
+   * Persist a freshly-computed rolling synopsis on a story. Keyed by id (not the
+   * active pointer) because the background {@link SynopsisService} may finish
+   * after the author has switched stories. Deliberately does NOT bump
+   * `updatedAt`: a background recap is housekeeping, not authoring, and must not
+   * reorder the library. No-op if the story no longer exists.
+   */
+  async setSynopsis(storyId: string, synopsis: string): Promise<void> {
+    const story = this.stories().find((s) => s.id === storyId);
+    if (!story) {
+      return;
+    }
+    const next: Story = { ...story, synopsis, synopsisUpdatedAt: Date.now() };
+    await this.storage.putStory(next);
+    this.stories.update((all) => all.map((s) => (s.id === storyId ? next : s)));
+  }
+
+  /** Has this drift flag been dismissed for the given story? */
+  isDriftDismissed(storyId: string, flagId: string): boolean {
+    const story = this.stories().find((s) => s.id === storyId);
+    return (story?.dismissedDriftIds ?? []).includes(flagId);
+  }
+
+  /**
+   * Remember a dismissed drift flag so it never re-surfaces for this story.
+   * Story-scoped; like {@link setSynopsis} it does not bump `updatedAt` (a
+   * dismissal is housekeeping, not authoring).
+   */
+  async dismissDrift(storyId: string, flagId: string): Promise<void> {
+    const story = this.stories().find((s) => s.id === storyId);
+    if (!story || (story.dismissedDriftIds ?? []).includes(flagId)) {
+      return;
+    }
+    const next: Story = {
+      ...story,
+      dismissedDriftIds: [...(story.dismissedDriftIds ?? []), flagId],
+    };
+    await this.storage.putStory(next);
+    this.stories.update((all) => all.map((s) => (s.id === storyId ? next : s)));
+  }
+
+  /**
    * Reorder a chapter one slot earlier (-1) or later (+1) within the active
    * story by swapping its `order` with the neighbour's. Auto-labelled titles are
    * renumbered so "Chapter N" tracks position; a custom title (if one ever

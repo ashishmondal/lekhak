@@ -16,9 +16,100 @@
           title="Cards the AI used: {{ usedCardNames().join(', ') }}"
         >{{ usedCardNames().length }} card{{ usedCardNames().length === 1 ? '' : 's' }} in play</span>
       }
+
+      <!-- Continuity (drift) — opt-in, quiet by default. Nothing renders when
+           the draft is clean or the check is off. -->
+      @if (drift.driftError()) {
+        <span
+          class="chip chip-warn"
+          title="The continuity check couldn't analyze this draft."
+        >couldn't analyze</span>
+      } @else if (drift.driftFlags().length > 0) {
+        <details class="popover" #driftMenu>
+          <summary
+            class="chip chip-warn"
+            aria-haspopup="true"
+            title="Possible continuity issues to review"
+          >{{ drift.driftFlags().length }} to review</summary>
+          <div
+            class="menu drift-menu"
+            role="region"
+            aria-label="Continuity notes"
+          >
+            @for (flag of drift.driftFlags(); track flag.id) {
+              <div class="drift-flag">
+                <p class="drift-card">{{ flag.card }}</p>
+                <p class="drift-issue">{{ flag.issue }}</p>
+                <button
+                  type="button"
+                  class="menu-item dismiss"
+                  (click)="dismissDrift(flag.id)"
+                >Dismiss</button>
+              </div>
+            }
+          </div>
+        </details>
+      }
+
+      <!-- Extraction — opt-in, event-driven on chapter finalize. Suggest-only. -->
+      @if (extraction.extractionError()) {
+        <span
+          class="chip chip-warn"
+          title="Couldn't analyze the chapter for new names."
+        >couldn't analyze names</span>
+      } @else if (extraction.suggestions().length > 0) {
+        <details class="popover" #extractMenu>
+          <summary
+            class="chip chip-accent"
+            aria-haspopup="true"
+            title="Suggested new cards from the last chapter"
+          >{{ extraction.suggestions().length }} new name{{ extraction.suggestions().length === 1 ? '' : 's' }}</summary>
+          <ul
+            class="menu extract-tray"
+            role="listbox"
+            aria-label="Suggested cards"
+          >
+            @for (s of extraction.suggestions(); track s.name) {
+              <li class="extract-row" role="option" aria-selected="false">
+                <span class="extract-info">
+                  <span class="extract-name">{{ s.name }}</span>
+                  @if (s.aliases?.length) {
+                    <span class="extract-alias">{{ s.aliases?.join(', ') }}</span>
+                  }
+                  <span class="extract-type">{{ s.type }}</span>
+                </span>
+                <span class="extract-actions">
+                  <button
+                    type="button"
+                    class="lib-btn"
+                    (click)="acceptSuggestion(s)"
+                  >Accept</button>
+                  <button
+                    type="button"
+                    class="lib-btn ghost-btn"
+                    (click)="dismissSuggestion(s)"
+                  >Dismiss</button>
+                </span>
+              </li>
+            }
+          </ul>
+        </details>
+      }
+
+      <!-- Polite announcements; never interrupts a screen reader mid-sentence. -->
+      <span class="sr-only" aria-live="polite">
+        @if (drift.driftFlags().length > 0) {
+          {{ drift.driftFlags().length }} continuity note{{ drift.driftFlags().length === 1 ? '' : 's' }} to review
+        }
+        @if (extraction.suggestions().length > 0) {
+          {{ extraction.suggestions().length }} new name{{ extraction.suggestions().length === 1 ? '' : 's' }} suggested
+        }
+      </span>
+
       <a class="settings-link" routerLink="/world">World</a>
       <a class="settings-link" routerLink="/settings">Settings</a>
       <app-theme-toggle />
+
     </div>
   </header>
 

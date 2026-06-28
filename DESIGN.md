@@ -62,6 +62,15 @@ Loaded via Google Fonts in [src/index.html](src/index.html). Story prose:
   `--sheet-shadow` soft drop-shadow, `0.75rem` radius.
 - **Primary button (Write next):** `--accent` bg, `--accent-ink` text,
   `--font-display`, `--accent-shadow`.
+- **Advisory chips (opt-in consistency):** status-bar pills that open a `--surface`
+  + `--shadow-menu` popover. _Continuity_ uses `--warn` on `--warn-soft`
+  (`N to review` → stacked notes, each individually dismissable). _New-card
+  suggestions_ use `--accent` on `--accent-soft` (`N new names` → a listbox tray
+  with Accept / Dismiss per row). Both are quiet by default: nothing renders when
+  the draft is clean or the toggle is off — no spinner, no "all consistent" badge.
+  Failures degrade to a plain `couldn't analyze` chip, never a red alert banner.
+  Counts announce via a polite live region; popovers close on outside-click and
+  Escape, and become a full-width sheet on narrow screens.
 
 ## Backdrop & shadows
 

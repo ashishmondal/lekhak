@@ -165,4 +165,45 @@ describe('WorldStore', () => {
     expect(store.cardAppearsInProse(card, 'And so Mira walked on.')).toBe(true);
     expect(store.cardAppearsInProse(card, 'Nobody was here.')).toBe(false);
   });
+
+  it('defaults card source to manual and honors an explicit source', async () => {
+    const { store } = setup();
+    await store.init();
+
+    const manual = await store.addCard({ type: 'character', name: 'Mira', notes: '' });
+    expect(manual.source).toBe('manual');
+
+    const extracted = await store.addCard({
+      type: 'character',
+      name: 'Tomas',
+      notes: '',
+      source: 'extracted',
+    });
+    expect(extracted.source).toBe('extracted');
+  });
+
+  it('remembers dismissed extraction names world-wide, case-insensitively', async () => {
+    const { store } = setup();
+    await store.init();
+
+    expect(store.isNameDismissed('Brann')).toBe(false);
+    await store.dismissName('Brann');
+    expect(store.isNameDismissed('brann')).toBe(true); // case-insensitive
+    expect(store.world()!.dismissedNames).toEqual(['brann']);
+
+    // Idempotent: dismissing again does not duplicate.
+    await store.dismissName('BRANN');
+    expect(store.world()!.dismissedNames).toEqual(['brann']);
+  });
+
+  it('persists dismissed names across reload', async () => {
+    const { store } = setup();
+    await store.init();
+    await store.dismissName('Brann');
+
+    TestBed.resetTestingModule();
+    const next = setup();
+    await next.store.init();
+    expect(next.store.isNameDismissed('Brann')).toBe(true);
+  });
 });

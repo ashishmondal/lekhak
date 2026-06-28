@@ -86,6 +86,33 @@ describe('SettingsService', () => {
     expect(svc.style()).toBe('banter');
   });
 
+  it('defaults every consistency surface OFF', () => {
+    const svc = new SettingsService();
+    expect(svc.driftCheck()).toBe(false);
+    expect(svc.extraction()).toBe(false);
+    expect(svc.canonCheck()).toBe(false);
+  });
+
+  it('persists each consistency toggle independently', () => {
+    const svc = new SettingsService();
+    svc.setDriftCheck(true);
+    svc.setExtraction(true);
+    svc.setCanonCheck(true);
+
+    expect(localStorage.getItem('lekhak.consistency.drift')).toBe('true');
+    expect(localStorage.getItem('lekhak.consistency.extraction')).toBe('true');
+    expect(localStorage.getItem('lekhak.consistency.canon')).toBe('true');
+
+    // A fresh instance reads them back.
+    const reloaded = new SettingsService();
+    expect(reloaded.driftCheck()).toBe(true);
+    expect(reloaded.extraction()).toBe(true);
+    expect(reloaded.canonCheck()).toBe(true);
+
+    svc.setDriftCheck(false);
+    expect(localStorage.getItem('lekhak.consistency.drift')).toBe('false');
+  });
+
   it('builds the provider matching the active selection', () => {
     const svc = new SettingsService();
     svc.setApiKey('sk-1');

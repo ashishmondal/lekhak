@@ -12,6 +12,13 @@ export function estimateTokens(text: string): number {
 /** Default prompt-context budget, in estimated tokens (leaves room for output). */
 export const DEFAULT_TOKEN_BUDGET = 8000;
 
+/**
+ * Share of the budget the story-memory block (synopsis + bible) may occupy.
+ * Caps the two together so they never crowd out the recent chapters; the bible
+ * (curated by relevance) is kept whole and the synopsis flexes underneath it.
+ */
+export const MEMORY_CAP_FRACTION = 0.5;
+
 /** Neutral fallback prompt when the caller passes no style override. */
 export const SYSTEM_PROMPT = buildSystemPrompt(DEFAULT_STYLE);
 
@@ -25,7 +32,13 @@ export interface ContextInput {
   nextBeat?: string;
   /** The selected passage to rewrite (rewrite mode). */
   selection?: string;
-  /** Text the relevance pass scans; defaults to current draft + beat + selection. */
+  /**
+   * Rolling summary of chapters trimmed out of the live budget. Passed in by
+   * the caller (computed by SynopsisService) so {@link ContextBuilder} stays
+   * pure. Shares the memory cap with the bible; truncated if the two overflow.
+   */
+  synopsis?: string;
+  /** Overrides the relevance scan text; defaults to the full kept context (all kept chapters + beat + selection). */
   recentText?: string;
   /** Cards the author pinned; always included regardless of relevance. */
   pinnedCardIds?: Iterable<string>;
@@ -38,8 +51,10 @@ export interface ContextResult {
   messages: ChatMessage[];
   /** Resolved cards actually included in the bible (drives the cards chip). */
   usedCards: Card[];
-  /** Visible notice when older chapters were dropped to fit; null otherwise. */
+  /** Visible notice when older chapters were dropped and/or the synopsis was truncated; null otherwise. */
   trimmedNote: string | null;
+  /** Ids of chapters the budget omitted from the prompt (drives the lazy synopsis refresh). */
+  droppedChapterIds: string[];
 }
 
 /**
@@ -157,10 +172,63 @@ function serializeCards(cards: Card[]): string {
   return `## WORLD BIBLE\n${blocks.join('\n')}`;
 }
 
-function defaultRecentText(input: ContextInput): string {
-  const sorted = [...input.chapters].sort((a, b) => a.order - b.order);
-  const currentBody = sorted.at(-1)?.body ?? '';
-  return [currentBody, input.nextBeat ?? '', input.selection ?? ''].join(' ');
+/**
+ * Text the relevance pass scans: every kept chapter body (ascending), plus the
+ * beat and selection. Scanning the whole kept context — not a tail of the
+ * current draft — is what lets a character named in an early chapter but only
+ * pronoun-referenced near the cursor still resolve into the bible.
+ */
+function scanText(chapters: Chapter[], nextBeat?: string, selection?: string): string {
+  const bodies = [...chapters].sort((a, b) => a.order - b.order).map((c) => c.body);
+  return [...bodies, nextBeat ?? '', selection ?? ''].join(' ');
+}
+
+/** Truncate `text` to at most `maxTokens` (chars/4), on a word boundary when possible. */
+function capText(text: string, maxTokens: number): { text: string; truncated: boolean } {
+  if (maxTokens <= 0) {
+    return { text: '', truncated: true };
+  }
+  const maxChars = maxTokens * 4;
+  if (text.length <= maxChars) {
+    return { text, truncated: false };
+  }
+  const slice = text.slice(0, maxChars);
+  const lastSpace = slice.lastIndexOf(' ');
+  // Only honor the word boundary if it's reasonably close to the end, else a
+  // pathological no-space run would throw most of the budget away.
+  const cut = lastSpace > maxChars * 0.6 ? slice.slice(0, lastSpace) : slice;
+  return { text: `${cut.trimEnd()}…`, truncated: true };
+}
+
+/**
+ * Assemble the system message: base prompt, then the STORY SO FAR synopsis, then
+ * the WORLD BIBLE. The synopsis is truncated to `synopsisBudget` tokens (the
+ * room the builder set aside for it); the curated bible is always kept whole.
+ */
+function assembleSystemContent(
+  basePrompt: string,
+  synopsis: string | undefined,
+  bible: string,
+  synopsisBudget: number,
+): { systemContent: string; synopsisNote: string | null } {
+  const raw = synopsis?.trim();
+
+  let synopsisBlock = '';
+  let synopsisNote: string | null = null;
+  if (raw) {
+    const { text, truncated } = capText(raw, synopsisBudget);
+    if (text) {
+      synopsisBlock = `## STORY SO FAR\n${text}`;
+    }
+    if (truncated) {
+      synopsisNote = 'Summary of earlier chapters truncated to fit';
+    }
+  }
+
+  const systemContent = [basePrompt, synopsisBlock, bible]
+    .filter((part) => part !== '')
+    .join('\n\n');
+  return { systemContent, synopsisNote };
 }
 
 function buildUserContent(
@@ -188,24 +256,67 @@ function buildUserContent(
 export class ContextBuilder {
   build(input: ContextInput): ContextResult {
     const budget = input.tokenBudget ?? DEFAULT_TOKEN_BUDGET;
-    const recentText = input.recentText ?? defaultRecentText(input);
-
-    const resolved = input.cards.map((card) => resolveCard(card, input.story.eraId));
-    const usedCards = selectRelevant(resolved, recentText, input.pinnedCardIds);
-
     const basePrompt = input.systemPrompt ?? SYSTEM_PROMPT;
-    const bible = serializeCards(usedCards);
-    const systemContent = bible ? `${basePrompt}\n\n${bible}` : basePrompt;
+    const resolved = input.cards.map((card) => resolveCard(card, input.story.eraId));
 
-    const reservedTokens =
-      estimateTokens(systemContent) +
+    // Order matters: budget BEFORE relevance. We must know which chapters
+    // survive into the prompt before scanning them for card mentions —
+    // otherwise relevance keys off text that may not match what the model
+    // actually sees. Pass 1 reserves only the base prompt + beat + selection
+    // (the bible's size is still unknown). Cards can only shrink the chapter
+    // budget, so this kept set is a safe superset of the final one.
+    //
+    //   chapters ─▶ fitBudget(no bible) ─▶ kept' ─▶ selectRelevant ─▶ bible
+    //                                                                   │
+    //                              fitBudget(with bible) ◀──────────────┘
+    //                                       │
+    //                                       ▼  final kept chapters
+    const baseReserve =
+      estimateTokens(basePrompt) +
       estimateTokens(input.nextBeat ?? '') +
       estimateTokens(input.selection ?? '');
+    const provisional = fitBudget(input.chapters, baseReserve, budget);
 
+    // Relevance scans the FULL kept context (every kept chapter body, beat and
+    // selection). An explicit `recentText` overrides this for callers that
+    // want a narrower scan.
+    const recentText =
+      input.recentText ?? scanText(provisional.keptChapters, input.nextBeat, input.selection);
+    const usedCards = selectRelevant(resolved, recentText, input.pinnedCardIds);
+
+    const bible = serializeCards(usedCards);
+
+    // Final chapter budget. The reserve EXCLUDES the synopsis on purpose:
+    // deciding which chapters survive without counting the synopsis is what
+    // guarantees that enabling a synopsis can never drop a chapter that fit
+    // without one (monotonicity). The synopsis then fills only the space the
+    // dropped chapters vacated, so the prompt still respects the budget.
+    const chapterReserve =
+      estimateTokens(basePrompt) +
+      estimateTokens(bible) +
+      estimateTokens(input.nextBeat ?? '') +
+      estimateTokens(input.selection ?? '');
     const { keptChapters, trimmedNote } = fitBudget(
       input.chapters,
-      reservedTokens,
+      chapterReserve,
       budget,
+    );
+
+    // Synopsis budget = the genuine leftover after the kept chapters (so it
+    // cannot displace one), bounded by the memory cap it shares with the bible.
+    const keptTokens = keptChapters.reduce(
+      (sum, chapter) => sum + estimateTokens(chapter.body),
+      0,
+    );
+    const leftover = budget - chapterReserve - keptTokens;
+    const memoryRoom = Math.floor(budget * MEMORY_CAP_FRACTION) - estimateTokens(bible);
+    const synopsisBudget = Math.max(0, Math.min(leftover, memoryRoom));
+
+    const { systemContent, synopsisNote } = assembleSystemContent(
+      basePrompt,
+      input.synopsis,
+      bible,
+      synopsisBudget,
     );
 
     const storySoFar = keptChapters
@@ -213,11 +324,24 @@ export class ContextBuilder {
       .filter((body) => body.trim() !== '')
       .join('\n\n');
 
+    const keptIds = new Set(keptChapters.map((chapter) => chapter.id));
+    const droppedChapterIds = input.chapters
+      .filter((chapter) => !keptIds.has(chapter.id))
+      .map((chapter) => chapter.id);
+
     const messages: ChatMessage[] = [
       { role: 'system', content: systemContent },
       { role: 'user', content: buildUserContent(storySoFar, input.nextBeat, input.selection) },
     ];
 
-    return { messages, usedCards, trimmedNote };
+    // One visible notice covers both budget effects: dropped chapters and a
+    // truncated synopsis.
+    const note = [trimmedNote, synopsisNote].filter((n) => n !== null).join(' · ');
+    return {
+      messages,
+      usedCards,
+      trimmedNote: note === '' ? null : note,
+      droppedChapterIds,
+    };
   }
 }

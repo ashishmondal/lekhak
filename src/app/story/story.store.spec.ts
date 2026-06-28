@@ -255,4 +255,45 @@ describe('StoryStore', () => {
       expect(store.chapters().map((c) => c.id)).toEqual(before);
     });
   });
+
+  describe('dismissDrift', () => {
+    it('remembers a dismissed drift flag per story without re-surfacing it', async () => {
+      const { store } = setup();
+      await store.init(WORLD, ERA);
+      const id = store.activeStoryId();
+
+      expect(store.isDriftDismissed(id, 'flag-a')).toBe(false);
+      await store.dismissDrift(id, 'flag-a');
+      expect(store.isDriftDismissed(id, 'flag-a')).toBe(true);
+
+      // Idempotent.
+      await store.dismissDrift(id, 'flag-a');
+      const story = store.stories().find((s) => s.id === id)!;
+      expect(story.dismissedDriftIds).toEqual(['flag-a']);
+    });
+
+    it('does not bump updatedAt (dismissal is housekeeping, not authoring)', async () => {
+      const { store } = setup();
+      await store.init(WORLD, ERA);
+      const id = store.activeStoryId();
+      const before = store.stories().find((s) => s.id === id)!.updatedAt;
+
+      await store.dismissDrift(id, 'flag-a');
+
+      const after = store.stories().find((s) => s.id === id)!.updatedAt;
+      expect(after).toBe(before);
+    });
+
+    it('persists dismissed drift across reload', async () => {
+      const { store } = setup();
+      await store.init(WORLD, ERA);
+      const id = store.activeStoryId();
+      await store.dismissDrift(id, 'flag-a');
+
+      TestBed.resetTestingModule();
+      const next = setup();
+      await next.store.init(WORLD, ERA);
+      expect(next.store.isDriftDismissed(id, 'flag-a')).toBe(true);
+    });
+  });
 });

@@ -8,6 +8,8 @@ import { AiError } from '../ai/ai-error';
 import { AI_PROVIDER } from '../ai/ai-provider.token';
 import { FakeProvider } from '../ai/fake-provider';
 import { ContextBuilder } from '../context/context-builder';
+import { CanonCheckService } from '../services/canon-check.service';
+import { ExtractionService } from '../services/extraction.service';
 import { GenerationService } from '../services/generation.service';
 import { Autosave } from '../services/autosave';
 import { SettingsService } from '../services/settings.service';
@@ -307,3 +309,69 @@ describe('EditorComponent', () => {
     expect(menu.open).toBe(false);
   });
 });
+
+describe('EditorComponent — consistency surfaces', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    globalThis.indexedDB = new IDBFactory();
+    localStorage.clear();
+  });
+
+  it('points the drift service at the active story on load', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+    const drift = TestBed.inject(CanonCheckService);
+    expect(drift.activeStoryId()).toBe(comp.stories.activeStoryId());
+  });
+
+  it('delegates a drift dismissal to the canon-check service', async () => {
+    const fixture = await render(new FakeProvider());
+    const drift = TestBed.inject(CanonCheckService);
+    const spy = vi.spyOn(drift, 'dismissDrift').mockResolvedValue();
+    await (fixture.componentInstance as any).dismissDrift('flag-1');
+    expect(spy).toHaveBeenCalledWith('flag-1');
+  });
+
+  it('delegates accept and dismiss of a suggestion to the extraction service', async () => {
+    const fixture = await render(new FakeProvider());
+    const extraction = TestBed.inject(ExtractionService);
+    const accept = vi
+      .spyOn(extraction, 'accept')
+      .mockResolvedValue({} as never);
+    const dismiss = vi.spyOn(extraction, 'dismiss').mockResolvedValue();
+    const suggestion = { type: 'character', name: 'Nadia', notes: '' } as never;
+
+    const comp = fixture.componentInstance as any;
+    await comp.acceptSuggestion(suggestion);
+    await comp.dismissSuggestion(suggestion);
+
+    expect(accept).toHaveBeenCalledWith(suggestion);
+    expect(dismiss).toHaveBeenCalledWith(suggestion);
+  });
+
+  it('feeds the chapter being left to extraction when a new chapter opens', async () => {
+    const fixture = await render(new FakeProvider());
+    const extraction = TestBed.inject(ExtractionService);
+    const spy = vi.spyOn(extraction, 'onChapterFinalized').mockResolvedValue();
+    const comp = fixture.componentInstance as any;
+
+    comp.storyText.set('A long, finished chapter body worth mining.');
+    await comp.newChapter();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0].body).toContain('finished chapter');
+  });
+
+  it('nudges the drift check as the author types', async () => {
+    const fixture = await render(new FakeProvider());
+    const drift = TestBed.inject(CanonCheckService);
+    const spy = vi.spyOn(drift, 'noteDraftChanged');
+    const comp = fixture.componentInstance as any;
+
+    comp.onStoryInput(storyBox('The harbor was quiet at dawn.'));
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0].draft).toContain('harbor');
+  });
+});
+

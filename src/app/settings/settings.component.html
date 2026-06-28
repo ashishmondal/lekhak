@@ -85,6 +85,62 @@
 
   <hr class="rule" />
 
+  <section class="consistency">
+    <h2>Consistency checks</h2>
+    <p class="note">
+      Opt-in helpers that watch your draft for continuity. Each one spends your
+      own API tokens when it runs, so they're all off by default. Turn on only
+      what's worth the cost.
+    </p>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        [checked]="settings.driftCheck()"
+        (change)="settings.setDriftCheck($any($event.target).checked)"
+      />
+      <span class="toggle-text">
+        <span class="toggle-name">Continuity check</span>
+        <span class="toggle-hint"
+          >Quietly flags places the draft contradicts a card or the story so
+          far, while you write.</span
+        >
+      </span>
+    </label>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        [checked]="settings.extraction()"
+        (change)="settings.setExtraction($any($event.target).checked)"
+      />
+      <span class="toggle-text">
+        <span class="toggle-name">Suggest new cards</span>
+        <span class="toggle-hint"
+          >When you finish a chapter, suggests new characters, places, and lore
+          to add to your World. You approve each one.</span
+        >
+      </span>
+    </label>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        [checked]="settings.canonCheck()"
+        (change)="settings.setCanonCheck($any($event.target).checked)"
+      />
+      <span class="toggle-text">
+        <span class="toggle-name">Full canon review</span>
+        <span class="toggle-hint"
+          >A thorough, on-demand pass over the whole chapter against your World.
+          More tokens, deeper read.</span
+        >
+      </span>
+    </label>
+  </section>
+
+  <hr class="rule" />
+
   <section class="backup">
     <h2>Backup</h2>
     <p class="note">

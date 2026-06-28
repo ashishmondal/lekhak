@@ -467,3 +467,155 @@ button:disabled {
   white-space: nowrap;
   border: 0;
 }
+
+/* --- consistency surfaces: drift flags + extraction tray ---
+   Quiet, typographic status-bar chips that open a popover. They reuse the
+   .chip pill and .menu dropdown so they read as part of the status bar, not a
+   modal. Tone, not alarm: --warn for advisories, --accent for suggestions. */
+.chip-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  cursor: pointer;
+}
+
+.chip-accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.popover {
+  position: relative;
+  display: inline-flex;
+}
+
+.popover > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.popover > summary::-webkit-details-marker {
+  display: none;
+}
+
+.popover > summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Drift popover: one stacked note per flag, each individually dismissable. */
+.drift-menu {
+  max-width: 22rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  white-space: normal;
+}
+
+.drift-flag {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.drift-flag + .drift-flag {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 0.15rem;
+  padding-top: 0.5rem;
+}
+
+.drift-card {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.drift-issue {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.drift-flag .dismiss {
+  align-self: flex-start;
+  margin-top: 0.1rem;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.74rem;
+  color: var(--faint);
+}
+
+/* Extraction tray: suggest-only rows with Accept / Dismiss. */
+.extract-tray {
+  list-style: none;
+  margin: 0;
+  max-width: 22rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  white-space: normal;
+}
+
+.extract-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.extract-row + .extract-row {
+  border-top: 1px solid var(--line-soft);
+}
+
+.extract-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.extract-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.extract-alias {
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
+.extract-type {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--faint);
+}
+
+.extract-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+/* Coarse pointers (touch): give the tappable controls a 44px target. */
+@media (pointer: coarse) {
+  .drift-flag .dismiss,
+  .extract-actions .lib-btn {
+    min-height: 2.75rem;
+  }
+}
+
+/* Narrow screens: let the popovers become a full-width sheet so long notes
+   don't overflow the viewport. */
+@media (max-width: 30rem) {
+  .drift-menu,
+  .extract-tray {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    max-width: none;
+  }
+}
+

@@ -5,6 +5,8 @@ import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from '../ai/ai-provider';
 import { AI_PROVIDER } from '../ai/ai-provider.token';
 import { ContextBuilder, type ContextInput } from '../context/context-builder';
 import type { Card } from '../models/domain';
+import { BackgroundQueue } from './background-queue';
+import { SynopsisService } from './synopsis.service';
 
 export interface GenerateRunOpts {
   model?: string;
@@ -24,6 +26,8 @@ export interface GenerateRunOpts {
 export class GenerationService {
   private readonly provider = inject(AI_PROVIDER);
   private readonly contextBuilder = inject(ContextBuilder);
+  private readonly synopsis = inject(SynopsisService);
+  private readonly queue = inject(BackgroundQueue);
 
   private controller: AbortController | null = null;
 
@@ -46,10 +50,26 @@ export class GenerationService {
     this.error.set(null);
     this.streaming.set(true);
 
+    // Foreground wins the single BYOK key: pause background advisory work for
+    // the life of this stream so we never race it into a 429.
+    const releaseForeground = this.queue.beginForeground();
+
     try {
-      const { messages, usedCards, trimmedNote } = this.contextBuilder.build(input);
+      const { messages, usedCards, trimmedNote, droppedChapterIds } =
+        this.contextBuilder.build(input);
       this.trimmedNote.set(trimmedNote);
       this.usedCards.set(usedCards);
+
+      // Lazy synopsis: if the budget trimmed chapters, refresh the rolling
+      // recap in the background. Fire-and-forget — this run never waits on it.
+      if (droppedChapterIds.length > 0) {
+        const dropped = input.chapters.filter((c) =>
+          droppedChapterIds.includes(c.id),
+        );
+        this.synopsis.onContextBuilt(input.story.id, dropped, {
+          model: opts.model,
+        });
+      }
 
       const stream = this.provider.generate(messages, {
         model: opts.model ?? DEFAULT_MODEL,
@@ -75,6 +95,7 @@ export class GenerationService {
         this.streaming.set(false);
         this.controller = null;
       }
+      releaseForeground();
     }
   }
 

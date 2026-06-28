@@ -30,6 +30,10 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
 
 const KEY_PROVIDER = 'lekhak.provider';
 const KEY_STYLE = 'lekhak.style';
+/** Opt-in consistency surfaces, all OFF by default (each costs BYOK tokens). */
+const KEY_DRIFT = 'lekhak.consistency.drift';
+const KEY_EXTRACTION = 'lekhak.consistency.extraction';
+const KEY_CANON = 'lekhak.consistency.canon';
 /** Pre-multi-provider keys, migrated into the OpenAI slot on first read. */
 const LEGACY_KEY_API = 'lekhak.apiKey';
 const LEGACY_KEY_MODEL = 'lekhak.model';
@@ -56,6 +60,11 @@ function has(key: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Boolean toggles persist as the literal 'true'/'false'; absent reads false. */
+function readBool(key: string): boolean {
+  return read(key, 'false') === 'true';
 }
 
 function isProviderId(value: string): value is ProviderId {
@@ -123,6 +132,32 @@ export class SettingsService {
    * locks its own style at creation, so changing this never alters an
    * existing story. */
   readonly style = signal<WritingStyleId>(readStyle());
+
+  /**
+   * Opt-in consistency surfaces. All default OFF: each spends extra BYOK tokens
+   * on the author's own key, so nothing runs until they explicitly enable it.
+   * - drift: advisory contradiction check while drafting.
+   * - extraction: suggest new world cards from finalized chapters.
+   * - canon: full canon check of the draft against the bible.
+   */
+  readonly driftCheck = signal<boolean>(readBool(KEY_DRIFT));
+  readonly extraction = signal<boolean>(readBool(KEY_EXTRACTION));
+  readonly canonCheck = signal<boolean>(readBool(KEY_CANON));
+
+  setDriftCheck(value: boolean): void {
+    this.driftCheck.set(value);
+    write(KEY_DRIFT, value ? 'true' : 'false');
+  }
+
+  setExtraction(value: boolean): void {
+    this.extraction.set(value);
+    write(KEY_EXTRACTION, value ? 'true' : 'false');
+  }
+
+  setCanonCheck(value: boolean): void {
+    this.canonCheck.set(value);
+    write(KEY_CANON, value ? 'true' : 'false');
+  }
 
   setStyle(value: string): void {
     const style = isWritingStyleId(value) ? value : DEFAULT_STYLE;

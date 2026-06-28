@@ -1,5 +1,9 @@
+import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 
+import { AiError } from '../ai/ai-error';
+import { AI_PROVIDER } from '../ai/ai-provider.token';
+import { FakeProvider } from '../ai/fake-provider';
 import type { Card, Chapter, Story } from '../models/domain';
 import {
   ContextBuilder,
@@ -134,6 +138,28 @@ describe('ContextBuilder.build', () => {
     expect(result.messages[0].content).toContain('### Character: Queen Mara');
   });
 
+  it('selects a card named in an earlier chapter even when the recent chapter only uses a pronoun', () => {
+    const cards = [card({ id: 'k1', name: 'Mara' })];
+    const chapters = [
+      chapter({ id: 'c0', order: 0, body: 'Mara drew her sword at dawn.' }),
+      chapter({ id: 'c1', order: 1, body: 'She pressed on through the dark.' }),
+    ];
+    const result = builder.build({ story: story(), chapters, cards });
+    // The current chapter only says "She" — full-context scan still resolves Mara.
+    expect(result.usedCards.map((c) => c.id)).toEqual(['k1']);
+  });
+
+  it('honors an explicit recentText override for the relevance scan', () => {
+    const cards = [card({ id: 'k1', name: 'Mara' })];
+    const result = builder.build({
+      story: story(),
+      chapters: [chapter({ order: 0, body: 'Mara was here.' })],
+      cards,
+      recentText: 'nothing relevant',
+    });
+    expect(result.usedCards).toHaveLength(0);
+  });
+
   it('omits the bible block when no cards are relevant', () => {
     const result = builder.build({
       story: story(),
@@ -172,6 +198,97 @@ describe('ContextBuilder.build', () => {
     );
     const result = builder.build({ story: story(), chapters, cards: [], tokenBudget: 110 });
     expect(result.trimmedNote).toContain('trimmed to fit');
+  });
+
+  it('appends the synopsis as a STORY SO FAR block before the bible', () => {
+    const result = builder.build({
+      story: story(),
+      chapters: [chapter({ order: 0, body: 'Mara lit the lamp.' })],
+      cards: [card({ id: 'k1', name: 'Mara' })],
+      synopsis: 'Earlier, Mara fled the capital.',
+    });
+    const system = result.messages[0].content;
+    expect(system).toContain('## STORY SO FAR');
+    expect(system).toContain('Earlier, Mara fled the capital.');
+    // Order: STORY SO FAR appears before the WORLD BIBLE.
+    expect(system.indexOf('## STORY SO FAR')).toBeLessThan(system.indexOf('## WORLD BIBLE'));
+  });
+
+  it('omits the synopsis block when none is provided', () => {
+    const result = builder.build({
+      story: story(),
+      chapters: [chapter({ order: 0, body: 'A quiet morning.' })],
+      cards: [],
+    });
+    expect(result.messages[0].content).not.toContain('## STORY SO FAR');
+  });
+
+  it('takes the synopsis as input verbatim (builder stays pure)', () => {
+    const result = builder.build({
+      story: story(),
+      chapters: [chapter({ order: 0, body: 'x' })],
+      cards: [],
+      synopsis: 'Pre-computed summary.',
+    });
+    expect(result.messages[0].content).toContain('Pre-computed summary.');
+  });
+
+  it('truncates the synopsis and notes it when memory overflows the cap', () => {
+    // A short base prompt makes the leftover/cap math predictable; a long
+    // synopsis then overflows the room the cap allows.
+    const longSynopsis = 'word '.repeat(400).trim();
+    const result = builder.build({
+      story: story(),
+      chapters: [chapter({ order: 0, body: 'A quiet morning.' })],
+      cards: [],
+      systemPrompt: 'S',
+      synopsis: longSynopsis,
+      tokenBudget: 120,
+    });
+    const system = result.messages[0].content;
+    expect(system).toContain('## STORY SO FAR');
+    expect(system).toContain('…'); // truncation marker
+    expect(result.trimmedNote).toContain('Summary of earlier chapters truncated');
+  });
+
+  it('enabling a synopsis never drops a chapter that fit without one (monotonicity)', () => {
+    const chapters = [0, 1, 2, 3].map((o) =>
+      chapter({ id: `c${o}`, order: o, body: bodyOfTokens(40) }),
+    );
+    const base = {
+      story: story(),
+      chapters,
+      cards: [],
+      systemPrompt: 'S',
+      tokenBudget: 130,
+    };
+    const without = builder.build(base);
+    const withSyn = builder.build({ ...base, synopsis: 'word '.repeat(1000) });
+    // The budget is tight enough that a chapter drops even without a synopsis…
+    expect(without.droppedChapterIds.length).toBeGreaterThan(0);
+    // …and adding a (large) synopsis must not drop any additional chapter.
+    expect(withSyn.droppedChapterIds).toEqual(without.droppedChapterIds);
+  });
+
+  it('build is pure: it touches no AI provider, even with a synopsis to place', () => {
+    // A provider that throws the instant it is drained. If build() ever called
+    // it, this would throw; purity means it never does.
+    const throwing = new FakeProvider({
+      chunks: [],
+      error: new AiError('network', 'must not be called'),
+      errorAfter: 0,
+    });
+    TestBed.configureTestingModule({
+      providers: [{ provide: AI_PROVIDER, useValue: throwing }, ContextBuilder],
+    });
+    const injected = TestBed.inject(ContextBuilder);
+    const result = injected.build({
+      story: story(),
+      chapters: [chapter({ order: 0, body: 'Mara.' })],
+      cards: [card({ id: 'k1', name: 'Mara' })],
+      synopsis: 'Earlier events.',
+    });
+    expect(result.messages[0].content).toContain('Earlier events.');
   });
 
   it('uses the style system prompt when one is supplied', () => {

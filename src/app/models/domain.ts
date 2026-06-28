@@ -16,6 +16,12 @@ export interface World {
   id: string;
   title: string;
   eras: Era[];
+  /**
+   * Extraction name-suggestions the author rejected, lowercased. World-scoped
+   * (cards belong to a world, not a story) so a rejected name never re-nags
+   * across the world's stories. Schemaless add — no DB version bump.
+   */
+  dismissedNames?: string[];
   updatedAt: number;
 }
 
@@ -31,6 +37,19 @@ export interface Story {
    * default style.
    */
   styleId?: WritingStyleId;
+  /**
+   * Rolling summary of chapters that have been trimmed out of the live budget,
+   * computed lazily in the background (see SynopsisService). Optional: absent
+   * until the first trim happens. Schemaless add — no IndexedDB version bump.
+   */
+  synopsis?: string;
+  /** When {@link synopsis} was last regenerated; drives coalescing of edits. */
+  synopsisUpdatedAt?: number;
+  /**
+   * Drift flags the author dismissed for this story, by flag id. Story-scoped
+   * because drift is judged against this draft. Schemaless add — no DB bump.
+   */
+  dismissedDriftIds?: string[];
   updatedAt: number;
 }
 

@@ -123,14 +123,16 @@
 }
 
 .backup,
-.style {
+.style,
+.consistency {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
 .backup h2,
-.style h2 {
+.style h2,
+.consistency h2 {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
@@ -150,4 +152,46 @@
 
 .import input {
   display: none;
+}
+
+/* Consistency toggles: a checkbox with name + cost hint. The accent box
+   communicates “on” without a separate badge. */
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.toggle input {
+  margin: 0;
+  margin-top: 0.15rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.toggle input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.toggle-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.toggle-hint {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--muted);
 }

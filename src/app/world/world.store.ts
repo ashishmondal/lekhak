@@ -1,6 +1,14 @@
 import { Service, computed, inject, signal } from '@angular/core';
 
-import type { Card, CardOverlay, CardType, Era, Story, World } from '../models/domain';
+import type {
+  Card,
+  CardOverlay,
+  CardSource,
+  CardType,
+  Era,
+  Story,
+  World,
+} from '../models/domain';
 import { StorageService } from '../services/storage.service';
 
 /** The single implicit world's id in v1 (no world switcher yet). */
@@ -16,6 +24,8 @@ export interface NewCard {
   name: string;
   notes: string;
   aliases?: string[];
+  /** Provenance; defaults to 'manual'. Extraction-accept passes 'extracted'. */
+  source?: CardSource;
 }
 
 function uuid(): string {
@@ -161,7 +171,7 @@ export class WorldStore {
       type: input.type,
       name: input.name.trim(),
       notes: input.notes.trim(),
-      source: 'manual',
+      source: input.source ?? 'manual',
       aliases: input.aliases?.length ? input.aliases : undefined,
       updatedAt: Date.now(),
     };
@@ -208,6 +218,28 @@ export class WorldStore {
   async deleteCard(id: string): Promise<void> {
     await this.storage.deleteCard(id);
     this.cards.update((cards) => cards.filter((c) => c.id !== id));
+  }
+
+  /** Has this extraction name-suggestion been dismissed in this world? (case-insensitive) */
+  isNameDismissed(name: string): boolean {
+    const key = name.trim().toLowerCase();
+    return (this.world()?.dismissedNames ?? []).includes(key);
+  }
+
+  /**
+   * Remember a rejected extraction name so it never re-suggests anywhere in this
+   * world. Lowercased; world-scoped because cards belong to the world.
+   */
+  async dismissName(name: string): Promise<void> {
+    const world = this.world();
+    const key = name.trim().toLowerCase();
+    if (!world || key === '' || (world.dismissedNames ?? []).includes(key)) {
+      return;
+    }
+    await this.saveWorld({
+      ...world,
+      dismissedNames: [...(world.dismissedNames ?? []), key],
+    });
   }
 
   /** Soft-warning helper: does this card's name/alias appear in the prose? */

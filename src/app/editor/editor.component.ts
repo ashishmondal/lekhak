@@ -22,6 +22,11 @@ import { resolveCard, type ContextInput } from '../context/context-builder';
 import type { Card } from '../models/domain';
 import { findActiveMention, rankCharacters } from './mention';
 import { GenerationService } from '../services/generation.service';
+import { CanonCheckService } from '../services/canon-check.service';
+import {
+  ExtractionService,
+  type ExtractionSuggestion,
+} from '../services/extraction.service';
 import { Autosave } from '../services/autosave';
 import { SettingsService } from '../services/settings.service';
 import { saveStateLabel } from '../services/save-state';
@@ -39,8 +44,6 @@ const ERROR_COPY: Record<AiErrorKind, string> = {
   unknown: 'Something went wrong. Try again.',
 };
 
-/** How much of the tail feeds the relevance pass for card selection. */
-const RECENT_TAIL_CHARS = 2000;
 /** Treat the story box as "at bottom" within this many pixels. */
 const SCROLL_EPSILON = 20;
 
@@ -62,6 +65,8 @@ export class EditorComponent implements OnInit {
   protected readonly autosave = inject(Autosave);
   protected readonly world = inject(WorldStore);
   protected readonly stories = inject(StoryStore);
+  protected readonly drift = inject(CanonCheckService);
+  protected readonly extraction = inject(ExtractionService);
   private readonly storage = inject(StorageService);
   private readonly settings = inject(SettingsService);
   private readonly router = inject(Router);
@@ -138,6 +143,12 @@ export class EditorComponent implements OnInit {
   /** The chapter/story overflow menu, closed on outside-click and Escape. */
   private readonly moreMenu =
     viewChild<ElementRef<HTMLDetailsElement>>('moreMenu');
+  /** The drift-flags popover; same outside-click/Escape behavior. */
+  private readonly driftMenu =
+    viewChild<ElementRef<HTMLDetailsElement>>('driftMenu');
+  /** The extraction-suggestions tray; same outside-click/Escape behavior. */
+  private readonly extractMenu =
+    viewChild<ElementRef<HTMLDetailsElement>>('extractMenu');
 
   private pending = '';
   private rafId: number | null = null;
@@ -164,27 +175,28 @@ export class EditorComponent implements OnInit {
       void this.autosave.flush(); // route change / teardown
     });
 
-    // Dismiss the overflow menu on an outside click or Escape (native
-    // <details> stays open otherwise).
-    const closeMenu = (focusSummary = false) => {
-      const el = this.moreMenu()?.nativeElement;
-      if (!el?.open) {
-        return;
-      }
-      el.open = false;
-      if (focusSummary) {
-        el.querySelector('summary')?.focus();
-      }
-    };
+    // Dismiss any open popover (overflow menu, drift flags, extraction tray)
+    // on an outside click or Escape (native <details> stays open otherwise).
+    const menus = (): HTMLDetailsElement[] =>
+      [this.moreMenu(), this.driftMenu(), this.extractMenu()]
+        .map((m) => m?.nativeElement)
+        .filter((el): el is HTMLDetailsElement => !!el);
     const onDocClick = (e: MouseEvent) => {
-      const el = this.moreMenu()?.nativeElement;
-      if (el?.open && !el.contains(e.target as Node)) {
-        closeMenu();
+      for (const el of menus()) {
+        if (el.open && !el.contains(e.target as Node)) {
+          el.open = false;
+        }
       }
     };
     const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        closeMenu(true);
+      if (e.key !== 'Escape') {
+        return;
+      }
+      for (const el of menus()) {
+        if (el.open) {
+          el.open = false;
+          el.querySelector('summary')?.focus();
+        }
       }
     };
     document.addEventListener('click', onDocClick);
@@ -217,6 +229,7 @@ export class EditorComponent implements OnInit {
   /** Pull the active chapter's persisted body into the editing buffer. */
   private loadActiveBody(): void {
     this.storyText.set(this.stories.activeChapter()?.body ?? '');
+    this.drift.activeStoryId.set(this.stories.activeStoryId());
     this.firstChunk = true;
     this.stick = true;
   }
@@ -247,8 +260,54 @@ export class EditorComponent implements OnInit {
       return;
     }
     await this.autosave.flush();
+    // The chapter we're leaving is now finalized: mine it for new world cards
+    // (opt-in, background — a no-op when extraction is off). Fire-and-forget.
+    void this.extraction.onChapterFinalized({
+      chapterId: this.stories.activeChapterId(),
+      body: this.storyText(),
+      model: this.settings.model(),
+    });
     await this.stories.createChapter();
     this.loadActiveBody();
+  }
+
+  /** Era-resolve the world cards for the active story's locked era. */
+  private resolvedCards(): Card[] {
+    const eraId = this.stories.activeStory()?.eraId ?? '';
+    return this.world.cards().map((card) => resolveCard(card, eraId));
+  }
+
+  /**
+   * Nudge the opt-in drift check after a draft edit. A no-op when the toggle is
+   * off; otherwise debounced and gated inside the service.
+   */
+  private scheduleDriftCheck(): void {
+    const story = this.stories.activeStory();
+    if (!story) {
+      return;
+    }
+    this.drift.noteDraftChanged({
+      storyId: story.id,
+      draft: this.storyText(),
+      cards: this.resolvedCards(),
+      synopsis: story.synopsis,
+      model: this.settings.model(),
+    });
+  }
+
+  /** Dismiss a single continuity flag (remembered per story). */
+  protected async dismissDrift(flagId: string): Promise<void> {
+    await this.drift.dismissDrift(flagId);
+  }
+
+  /** Accept an extracted suggestion, creating a World card. */
+  protected async acceptSuggestion(s: ExtractionSuggestion): Promise<void> {
+    await this.extraction.accept(s);
+  }
+
+  /** Dismiss an extracted suggestion (remembered world-wide, never re-asked). */
+  protected async dismissSuggestion(s: ExtractionSuggestion): Promise<void> {
+    await this.extraction.dismiss(s);
   }
 
   /** Open the new-story form, seeding the era with the current world era. */
@@ -326,6 +385,7 @@ export class EditorComponent implements OnInit {
     this.storyText.set(box.value);
     this.markDirty();
     this.updateMention('story', box);
+    this.scheduleDriftCheck();
   }
 
   protected onBeatInput(box: HTMLTextAreaElement): void {
@@ -534,7 +594,7 @@ export class EditorComponent implements OnInit {
       chapters,
       cards: this.world.cards(),
       nextBeat: beat || undefined,
-      recentText: `${body.slice(-RECENT_TAIL_CHARS)} ${beat}`,
+      synopsis: story.synopsis,
       systemPrompt: buildSystemPrompt(story.styleId ?? DEFAULT_STYLE),
     };
 
