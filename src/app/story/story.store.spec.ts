@@ -89,18 +89,18 @@ describe('StoryStore', () => {
     const { store } = setup();
     await store.init(WORLD, ERA);
 
-    await store.createStory('A Tense Tale', WORLD, ERA, 'playwright');
+    await store.createStory('A Tender Tale', WORLD, ERA, 'romance');
 
-    expect(store.activeStory()!.styleId).toBe('playwright');
+    expect(store.activeStory()!.styleId).toBe('romance');
   });
 
-  it('createStory defaults the style to the screenwriter persona', async () => {
+  it('createStory defaults the style to the banter persona', async () => {
     const { store } = setup();
     await store.init(WORLD, ERA);
 
     await store.createStory('Default Style', WORLD, ERA);
 
-    expect(store.activeStory()!.styleId).toBe('screenwriter');
+    expect(store.activeStory()!.styleId).toBe('banter');
   });
 
   it('createChapter appends at order max+1 and selects the new chapter', async () => {

@@ -71,19 +71,19 @@ describe('SettingsService', () => {
     expect(svc.provider()).toBe('openai');
   });
 
-  it('defaults the writing style to screenwriter and persists changes', () => {
+  it('defaults the writing style to banter and persists changes', () => {
     const svc = new SettingsService();
-    expect(svc.style()).toBe('screenwriter');
+    expect(svc.style()).toBe('banter');
 
-    svc.setStyle('cowriter');
-    expect(svc.style()).toBe('cowriter');
-    expect(localStorage.getItem('lekhak.style')).toBe('cowriter');
+    svc.setStyle('heartfelt');
+    expect(svc.style()).toBe('heartfelt');
+    expect(localStorage.getItem('lekhak.style')).toBe('heartfelt');
   });
 
   it('ignores an unknown stored style', () => {
     localStorage.setItem('lekhak.style', 'novelist');
     const svc = new SettingsService();
-    expect(svc.style()).toBe('screenwriter');
+    expect(svc.style()).toBe('banter');
   });
 
   it('builds the provider matching the active selection', () => {

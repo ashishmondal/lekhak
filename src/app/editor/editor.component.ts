@@ -15,6 +15,7 @@ import {
   DEFAULT_STYLE,
   WRITING_STYLES,
   buildSystemPrompt,
+  isWritingStyleId,
   type WritingStyleId,
 } from '../ai/writing-style';
 import type { ContextInput } from '../context/context-builder';
@@ -88,7 +89,9 @@ export class EditorComponent implements OnInit {
 
   /** Label of the active story's locked writing style, shown while writing. */
   protected readonly activeStyleLabel = computed(() => {
-    const styleId = this.stories.activeStory()?.styleId ?? DEFAULT_STYLE;
+    const raw = this.stories.activeStory()?.styleId;
+    // Legacy stories may carry a retired id; resolve those to the default.
+    const styleId = raw && isWritingStyleId(raw) ? raw : DEFAULT_STYLE;
     return WRITING_STYLES.find((s) => s.id === styleId)?.label ?? '';
   });
 

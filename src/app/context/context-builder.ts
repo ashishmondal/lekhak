@@ -2,7 +2,7 @@ import { Service } from '@angular/core';
 
 import type { Card, Chapter, Story } from '../models/domain';
 import type { ChatMessage } from '../ai/ai-provider';
-import { buildSystemPrompt } from '../ai/writing-style';
+import { buildSystemPrompt, DEFAULT_STYLE } from '../ai/writing-style';
 
 /** Token estimate: ~4 chars per token is enough for v1 budgeting. */
 export function estimateTokens(text: string): number {
@@ -13,7 +13,7 @@ export function estimateTokens(text: string): number {
 export const DEFAULT_TOKEN_BUDGET = 8000;
 
 /** Neutral fallback prompt when the caller passes no style override. */
-export const SYSTEM_PROMPT = buildSystemPrompt('cowriter');
+export const SYSTEM_PROMPT = buildSystemPrompt(DEFAULT_STYLE);
 
 export interface ContextInput {
   story: Story;
