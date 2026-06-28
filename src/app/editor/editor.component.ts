@@ -19,6 +19,7 @@ import { saveStateLabel } from '../services/save-state';
 import { MAX_CHAPTERS, StorageService } from '../services/storage.service';
 import { StoryStore } from '../story/story.store';
 import { WorldStore } from '../world/world.store';
+import { ThemeToggleComponent } from '../theme/theme-toggle.component';
 
 const ERROR_COPY: Record<AiErrorKind, string> = {
   auth: 'Check your API key in Settings.',
@@ -43,7 +44,7 @@ const SCROLL_EPSILON = 20;
  */
 @Component({
   selector: 'app-editor',
-  imports: [RouterLink],
+  imports: [RouterLink, ThemeToggleComponent],
   templateUrl: './editor.component.html',
   styleUrl: './editor.component.css',
 })

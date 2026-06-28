@@ -1,3 +1,11 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
 .panel {
   max-width: 720px;
   margin: 0 auto;
@@ -13,18 +21,24 @@
   gap: 1rem;
 }
 
+.bar app-theme-toggle {
+  margin-left: auto;
+  align-self: center;
+}
+
 .back {
   font-size: 0.85rem;
-  color: #6b675f;
+  color: var(--muted);
   text-decoration: none;
 }
 
 .back:hover {
-  color: #1c1b19;
+  color: var(--text);
 }
 
 h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   font-weight: 600;
 }
@@ -53,20 +67,20 @@ h2 {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .hint {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.5;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .empty {
   margin: 0;
   font-size: 0.85rem;
-  color: #908b80;
+  color: var(--faint);
   font-style: italic;
 }
 
@@ -75,10 +89,10 @@ input,
 textarea {
   font-family: inherit;
   font-size: 0.9rem;
-  color: inherit;
-  border: 1px solid #e3ded4;
+  color: var(--text);
+  border: 1px solid var(--line);
   border-radius: 0.45rem;
-  background: #fff;
+  background: var(--surface);
   padding: 0.4rem 0.6rem;
 }
 
@@ -90,7 +104,7 @@ textarea {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid #1c1b19;
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -105,8 +119,8 @@ select:focus {
   padding: 0.45rem 0.9rem;
   border: none;
   border-radius: 0.45rem;
-  background: #1c1b19;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -126,9 +140,9 @@ select:focus {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
-  border: 1px solid #ece7dd;
+  border: 1px solid var(--line-soft);
   border-radius: 0.6rem;
-  background: #fbf9f4;
+  background: var(--surface-3);
 }
 
 .card-top {
@@ -148,31 +162,31 @@ select:focus {
   letter-spacing: 0.04em;
   padding: 0.15rem 0.45rem;
   border-radius: 0.3rem;
-  background: #ece7dd;
-  color: #6b675f;
+  background: var(--badge-bg);
+  color: var(--badge-ink);
 }
 
 .badge-character {
-  background: #e7eef6;
-  color: #2c557f;
+  background: var(--badge-char-bg);
+  color: var(--badge-char-ink);
 }
 
 .badge-place {
-  background: #e8f2e9;
-  color: #2f6b3c;
+  background: var(--badge-place-bg);
+  color: var(--badge-place-ink);
 }
 
 .badge-lore {
-  background: #f3ece0;
-  color: #846221;
+  background: var(--badge-lore-bg);
+  color: var(--badge-lore-ink);
 }
 
 .danger {
   padding: 0.35rem 0.6rem;
-  border: 1px solid #f0cfc9;
+  border: 1px solid var(--danger-line);
   border-radius: 0.45rem;
-  background: #fff;
-  color: #8a2417;
+  background: var(--surface);
+  color: var(--danger);
   font-size: 0.8rem;
   cursor: pointer;
 }
@@ -184,28 +198,28 @@ select:focus {
   flex-wrap: wrap;
   padding: 0.5rem 0.7rem;
   border-radius: 0.5rem;
-  background: #fdf3e7;
-  color: #7a4a12;
+  background: var(--warn-soft);
+  color: var(--warn);
   font-size: 0.85rem;
 }
 
 .confirm button {
   padding: 0.3rem 0.6rem;
   border-radius: 0.4rem;
-  border: 1px solid #e3ded4;
-  background: #fff;
+  border: 1px solid var(--line);
+  background: var(--surface);
   font-size: 0.8rem;
   cursor: pointer;
 }
 
 .confirm .danger {
-  border-color: #f0cfc9;
+  border-color: var(--danger-line);
 }
 
 .overlay summary {
   cursor: pointer;
   font-size: 0.8rem;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .overlay {

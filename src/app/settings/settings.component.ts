@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AiError } from '../ai/ai-error';
 import { BackupImportError, BackupService } from '../services/backup.service';
 import { SettingsService } from '../services/settings.service';
+import { ThemeToggleComponent } from '../theme/theme-toggle.component';
 
 type TestState = 'idle' | 'testing' | 'ok' | 'failed';
 type BackupState = 'idle' | 'working' | 'ok' | 'failed';
@@ -15,7 +16,7 @@ type BackupState = 'idle' | 'working' | 'ok' | 'failed';
  */
 @Component({
   selector: 'app-settings',
-  imports: [RouterLink],
+  imports: [RouterLink, ThemeToggleComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
 })

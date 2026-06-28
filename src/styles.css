@@ -1,3 +1,123 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Theme tokens. Light = "Manuscript" (warm paper, serif, oxblood accent).
+   Dark = "Midnight Studio" (warm charcoal, serif, glowing amber accent).
+   The active theme is selected by data-theme on <html>, set before first
+   paint by the inline script in index.html and managed at runtime by
+   ThemeService. :root carries the light palette as the default.
+--------------------------------------------------------------------------- */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f6f1e7;
+  --surface: #fffdf8;
+  --surface-2: #efe4cf;
+  --surface-3: #fbf6ea;
+
+  --text: #211b16;
+  --muted: #6f6453;
+  --faint: #a99c84;
+
+  --line: #e4d9c4;
+  --line-soft: #ece2cf;
+
+  --accent: #8a2d2d;
+  --accent-ink: #fdf3ef;
+  --accent-soft: #f3e1dd;
+  --accent-glow: none;
+  --accent-shadow: 0 8px 18px -10px rgba(138, 45, 45, 0.5);
+
+  --danger: #8a2417;
+  --danger-soft: #fce8e6;
+  --danger-line: #f0cfc9;
+
+  --ok: #2f7d4f;
+  --warn: #7a4a12;
+  --warn-soft: #fdf3e7;
+
+  --focus: #211b16;
+
+  --chip: #f1e3c6;
+  --chip-ink: #7a5a16;
+
+  --badge-bg: #ece7dd;
+  --badge-ink: #6b675f;
+  --badge-char-bg: #e7eef6;
+  --badge-char-ink: #2c557f;
+  --badge-place-bg: #e8f2e9;
+  --badge-place-ink: #2f6b3c;
+  --badge-lore-bg: #f3ece0;
+  --badge-lore-ink: #846221;
+
+  --shadow-menu: 0 8px 24px rgba(28, 27, 25, 0.12);
+
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Spectral', Georgia, 'Times New Roman', serif;
+  --font-display: 'Fraunces', Georgia, serif;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #17130f;
+  --surface: #211b15;
+  --surface-2: #2a221a;
+  --surface-3: #241d16;
+
+  --text: #ece3d3;
+  --muted: #9b8f7c;
+  --faint: #6f6557;
+
+  --line: #352b21;
+  --line-soft: #2c241b;
+
+  --accent: #e6a93f;
+  --accent-ink: #2a1c06;
+  --accent-soft: rgba(230, 169, 63, 0.14);
+  --accent-glow: 0 0 12px rgba(230, 169, 63, 0.45);
+  --accent-shadow: 0 0 0 1px rgba(230, 169, 63, 0.35),
+    0 10px 22px -10px rgba(230, 169, 63, 0.6);
+
+  --danger: #e8907c;
+  --danger-soft: rgba(180, 60, 40, 0.16);
+  --danger-line: #5a3228;
+
+  --ok: #7fae84;
+  --warn: #e6b15f;
+  --warn-soft: rgba(230, 169, 63, 0.12);
+
+  --focus: #e6a93f;
+
+  --chip: rgba(230, 169, 63, 0.14);
+  --chip-ink: #e6a93f;
+
+  --badge-bg: #2a221a;
+  --badge-ink: #9b8f7c;
+  --badge-char-bg: rgba(90, 140, 200, 0.18);
+  --badge-char-ink: #a9c4e6;
+  --badge-place-bg: rgba(80, 170, 110, 0.16);
+  --badge-place-ink: #9ccfa6;
+  --badge-lore-bg: rgba(230, 169, 63, 0.16);
+  --badge-lore-ink: #e2bd7d;
+
+  --shadow-menu: 0 12px 30px rgba(0, 0, 0, 0.6);
+
+  /* Newsreader carries both display and body weight in the dark theme. */
+  --font-body: 'Newsreader', Georgia, serif;
+  --font-display: 'Newsreader', Georgia, serif;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+}

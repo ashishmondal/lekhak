@@ -1,8 +1,9 @@
 :host {
   display: block;
   min-height: 100dvh;
-  background: #faf9f7;
-  color: #1c1b19;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
 }
 
 .settings {
@@ -24,18 +25,26 @@
 
 .bar h1 {
   margin: 0;
-  font-size: 1.15rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
   font-weight: 600;
 }
 
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .back {
-  color: #6b675f;
+  color: var(--muted);
   text-decoration: none;
   font-size: 0.875rem;
   border-bottom: 1px solid transparent;
 }
 
 .back:hover {
+  color: var(--text);
   border-bottom-color: currentColor;
 }
 
@@ -43,7 +52,7 @@
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .field {
@@ -56,17 +65,17 @@
 
 .field input {
   padding: 0.55rem 0.7rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.55rem;
-  background: #fff;
+  background: var(--surface);
   font-family: inherit;
   font-size: 0.95rem;
   font-weight: 400;
-  color: inherit;
+  color: var(--text);
 }
 
 .field input:focus {
-  outline: 2px solid #1c1b19;
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -80,8 +89,8 @@
   padding: 0.5rem 1.1rem;
   border: none;
   border-radius: 0.55rem;
-  background: #1c1b19;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -97,16 +106,16 @@
 }
 
 .result-ok {
-  color: #2f7d4f;
+  color: var(--ok);
 }
 
 .result-failed {
-  color: #8a2417;
+  color: var(--danger);
 }
 
 .rule {
   border: none;
-  border-top: 1px solid #e9e4da;
+  border-top: 1px solid var(--line);
   width: 100%;
   margin: 0.5rem 0;
 }
@@ -131,8 +140,8 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  color: #1c1b19;
-  border-bottom: 1px solid #d8d2c6;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
 }
 
 .import input {

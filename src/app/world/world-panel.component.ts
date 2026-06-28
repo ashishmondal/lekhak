@@ -5,6 +5,7 @@ import type { Card, CardType } from '../models/domain';
 import { StorageService } from '../services/storage.service';
 import { EraManagerComponent } from './era-manager.component';
 import { WorldStore } from './world.store';
+import { ThemeToggleComponent } from '../theme/theme-toggle.component';
 
 const DRAFT_CHAPTER_ID = 'default-chapter';
 
@@ -18,7 +19,7 @@ const CARD_TYPES: CardType[] = ['character', 'place', 'lore'];
  */
 @Component({
   selector: 'app-world-panel',
-  imports: [RouterLink, EraManagerComponent],
+  imports: [RouterLink, EraManagerComponent, ThemeToggleComponent],
   templateUrl: './world-panel.component.html',
   styleUrl: './world-panel.component.css',
 })

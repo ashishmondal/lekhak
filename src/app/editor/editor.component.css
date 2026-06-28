@@ -1,8 +1,9 @@
 :host {
   display: block;
   height: 100dvh;
-  background: #faf9f7;
-  color: #1c1b19;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
 }
 
 .editor {
@@ -25,7 +26,8 @@
 
 .bar h1 {
   margin: 0;
-  font-size: 1.05rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -35,14 +37,14 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .dot {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: #2f7d4f;
+  background: var(--ok);
   animation: pulse 1s ease-in-out infinite;
 }
 
@@ -55,8 +57,8 @@
   max-width: 18rem;
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  background: #f1e3c6;
-  color: #7a5a16;
+  background: var(--chip);
+  color: var(--chip-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -67,21 +69,22 @@
 }
 
 .save-saving {
-  color: #7a5a16;
+  color: var(--warn);
 }
 
 .save-failed {
-  color: #8a2417;
+  color: var(--danger);
   font-weight: 600;
 }
 
 .settings-link {
-  color: #6b675f;
+  color: var(--muted);
   text-decoration: none;
   border-bottom: 1px solid transparent;
 }
 
 .settings-link:hover {
+  color: var(--text);
   border-bottom-color: currentColor;
 }
 
@@ -89,9 +92,13 @@
   margin: 0;
   padding: 0.6rem 0.8rem;
   border-radius: 0.5rem;
-  background: #fce8e6;
-  color: #8a2417;
+  background: var(--danger-soft);
+  color: var(--danger);
   font-size: 0.875rem;
+}
+
+.banner a {
+  color: inherit;
 }
 
 .story {
@@ -99,13 +106,17 @@
   min-height: 0;
   resize: none;
   padding: 1rem 1.1rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
-  font-family: ui-serif, Georgia, "Times New Roman", serif;
-  font-size: 1.05rem;
-  line-height: 1.7;
-  color: inherit;
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-size: 1.08rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.story::placeholder {
+  color: var(--faint);
 }
 
 .next {
@@ -117,20 +128,24 @@
 .ghost {
   margin: 0;
   font-size: 0.8rem;
-  color: #a8a299;
+  color: var(--faint);
   font-style: italic;
 }
 
 .beat {
   resize: none;
   padding: 0.6rem 0.8rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.6rem;
-  background: #fff;
-  font-family: inherit;
+  background: var(--surface);
+  font-family: var(--font-ui);
   font-size: 0.95rem;
   line-height: 1.5;
-  color: inherit;
+  color: var(--text);
+}
+
+.beat::placeholder {
+  color: var(--faint);
 }
 
 .actions {
@@ -142,7 +157,7 @@
 
 .hint {
   font-size: 0.78rem;
-  color: #a8a299;
+  color: var(--faint);
 }
 
 button {
@@ -155,18 +170,20 @@ button {
 }
 
 .write {
-  background: #1c1b19;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-display);
+  box-shadow: var(--accent-shadow);
 }
 
 .stop {
-  background: #8a2417;
-  color: #fff;
+  background: var(--danger);
+  color: var(--accent-ink);
 }
 
 .story:focus,
 .beat:focus {
-  outline: 2px solid #1c1b19;
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -177,7 +194,7 @@ button {
   align-items: center;
   gap: 0.5rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #ece7dd;
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .lib-field {
@@ -188,12 +205,12 @@ button {
 .story-select {
   max-width: 16rem;
   padding: 0.35rem 0.5rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-size: 0.85rem;
-  color: inherit;
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -215,8 +232,8 @@ button {
   padding: 0.25rem 0.6rem;
   border: 1px solid transparent;
   border-radius: 0.5rem;
-  background: #f1ede5;
-  color: #6b675f;
+  background: var(--surface-2);
+  color: var(--muted);
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
@@ -227,7 +244,7 @@ button {
 }
 
 .overflow > summary:hover {
-  color: #1c1b19;
+  color: var(--text);
 }
 
 .menu {
@@ -240,10 +257,10 @@ button {
   flex-direction: column;
   gap: 0.1rem;
   padding: 0.3rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.6rem;
-  background: #fff;
-  box-shadow: 0 8px 24px rgba(28, 27, 25, 0.12);
+  background: var(--surface);
+  box-shadow: var(--shadow-menu);
 }
 
 .menu-group-label {
@@ -251,7 +268,7 @@ button {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #a8a299;
+  color: var(--faint);
 }
 
 .menu-item {
@@ -263,53 +280,53 @@ button {
   font-size: 0.85rem;
   font-weight: 500;
   text-align: left;
-  color: #1c1b19;
+  color: var(--text);
   cursor: pointer;
 }
 
 .menu-item:hover:not(:disabled) {
-  background: #f4f1ea;
+  background: var(--surface-3);
 }
 
 .menu-item.danger {
-  color: #8a2417;
+  color: var(--danger);
 }
 
 .menu-item.danger:hover:not(:disabled) {
-  background: #fce8e6;
+  background: var(--danger-soft);
 }
 
 .menu-sep {
   height: 1px;
   margin: 0.25rem;
-  background: #ece7dd;
+  background: var(--line-soft);
 }
 
 .pager-label {
   font-size: 0.8rem;
-  color: #6b675f;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .page {
   padding: 0.25rem 0.55rem;
-  background: #f1ede5;
-  color: #1c1b19;
+  background: var(--surface-2);
+  color: var(--text);
   font-size: 1rem;
   line-height: 1;
 }
 
 .lib-btn {
   padding: 0.35rem 0.7rem;
-  background: #f1ede5;
-  color: #1c1b19;
+  background: var(--surface-2);
+  color: var(--text);
   font-size: 0.82rem;
 }
 
 .ghost-btn {
   background: transparent;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .new-story {
@@ -320,34 +337,34 @@ button {
 
 .new-story-input {
   padding: 0.35rem 0.55rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-size: 0.85rem;
-  color: inherit;
+  color: var(--text);
 }
 
 .era-select {
   padding: 0.35rem 0.5rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-size: 0.85rem;
-  color: inherit;
+  color: var(--text);
   cursor: pointer;
 }
 
 .era-bar {
   margin: 0;
   font-size: 0.8rem;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .era-name {
   font-weight: 600;
-  color: #1c1b19;
+  color: var(--text);
 }
 
 button:disabled {

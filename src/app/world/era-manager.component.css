@@ -14,15 +14,15 @@ h2 {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.5;
-  color: #6b675f;
+  color: var(--muted);
 }
 
 .error {
   margin: 0;
   padding: 0.5rem 0.7rem;
   border-radius: 0.5rem;
-  background: #fce8e6;
-  color: #8a2417;
+  background: var(--danger-soft);
+  color: var(--danger);
   font-size: 0.85rem;
 }
 
@@ -44,12 +44,12 @@ h2 {
 .name {
   flex: 1;
   padding: 0.4rem 0.6rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.45rem;
-  background: #fff;
+  background: var(--surface);
   font-family: inherit;
   font-size: 0.9rem;
-  color: inherit;
+  color: var(--text);
 }
 
 .controls {
@@ -59,9 +59,10 @@ h2 {
 
 .controls button {
   padding: 0.35rem 0.5rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.45rem;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   font-size: 0.8rem;
   cursor: pointer;
 }
@@ -72,8 +73,8 @@ h2 {
 }
 
 .controls .danger {
-  color: #8a2417;
-  border-color: #f0cfc9;
+  color: var(--danger);
+  border-color: var(--danger-line);
 }
 
 .add {
@@ -84,26 +85,26 @@ h2 {
 .add input {
   flex: 1;
   padding: 0.45rem 0.6rem;
-  border: 1px solid #e3ded4;
+  border: 1px solid var(--line);
   border-radius: 0.45rem;
-  background: #fff;
+  background: var(--surface);
   font-family: inherit;
   font-size: 0.9rem;
-  color: inherit;
+  color: var(--text);
 }
 
 .add button {
   padding: 0.45rem 0.9rem;
   border: none;
   border-radius: 0.45rem;
-  background: #1c1b19;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
 }
 
 input:focus {
-  outline: 2px solid #1c1b19;
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
