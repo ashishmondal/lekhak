@@ -66,6 +66,8 @@ const NEXT: Record<ThemePreference, ThemePreference> = {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
         padding: 0.3rem;
         border: 1px solid transparent;
         border-radius: 0.5rem;
