@@ -203,6 +203,22 @@ button {
   gap: 0.25rem;
 }
 
+.chapter-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.danger-btn {
+  background: transparent;
+  color: #8a2417;
+  border: 1px solid #e7c9c3;
+}
+
+.danger-btn:hover:not(:disabled) {
+  background: #fce8e6;
+}
+
 .pager-label {
   font-size: 0.8rem;
   color: #6b675f;

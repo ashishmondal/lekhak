@@ -201,6 +201,49 @@ export class EditorComponent implements OnInit {
     this.loadActiveBody();
   }
 
+  /** Reorder the active chapter one slot earlier (-1) or later (+1). */
+  protected async reorderChapter(direction: -1 | 1): Promise<void> {
+    if (this.gen.streaming()) {
+      return;
+    }
+    await this.autosave.flush(); // fold the live body in before rewriting the record
+    await this.stories.moveChapter(this.stories.activeChapterId(), direction);
+    this.loadActiveBody();
+  }
+
+  /** Delete the active chapter after confirming (destructive, no undo). */
+  protected async deleteActiveChapter(): Promise<void> {
+    if (this.gen.streaming()) {
+      return;
+    }
+    const label = `Chapter ${this.stories.activeChapterNumber()}`;
+    if (!this.confirm(`Delete ${label}? This can't be undone.`)) {
+      return;
+    }
+    await this.autosave.flush();
+    await this.stories.deleteChapter(this.stories.activeChapterId());
+    this.loadActiveBody();
+  }
+
+  /** Delete the active story and all its chapters after confirming. */
+  protected async deleteActiveStory(): Promise<void> {
+    if (this.gen.streaming()) {
+      return;
+    }
+    const title = this.stories.activeStory()?.title ?? 'this story';
+    if (!this.confirm(`Delete "${title}" and all its chapters? This can't be undone.`)) {
+      return;
+    }
+    await this.autosave.flush();
+    await this.stories.deleteStory(this.stories.activeStoryId());
+    this.loadActiveBody();
+  }
+
+  /** Native confirm, wrapped so tests can stub the destructive gate. */
+  protected confirm(message: string): boolean {
+    return globalThis.confirm?.(message) ?? false;
+  }
+
   protected onStoryInput(value: string): void {
     this.storyText.set(value);
     this.markDirty();

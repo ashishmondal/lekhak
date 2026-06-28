@@ -263,6 +263,42 @@ export class StoryStore {
   }
 
   /**
+   * Reorder a chapter one slot earlier (-1) or later (+1) within the active
+   * story by swapping its `order` with the neighbour's. Auto-labelled titles are
+   * renumbered so "Chapter N" tracks position; a custom title (if one ever
+   * exists) is preserved. The active selection is unchanged. No-op at the ends.
+   */
+  async moveChapter(id: string, direction: -1 | 1): Promise<void> {
+    const cs = [...this.chapters()].sort((a, b) => a.order - b.order);
+    const index = cs.findIndex((c) => c.id === id);
+    const swapWith = index + direction;
+    if (index < 0 || swapWith < 0 || swapWith >= cs.length) {
+      return;
+    }
+    const a = cs[index];
+    const b = cs[swapWith];
+    const aNext: Chapter = {
+      ...a,
+      order: b.order,
+      title: renumberTitle(a.title, a.order, b.order),
+      updatedAt: Date.now(),
+    };
+    const bNext: Chapter = {
+      ...b,
+      order: a.order,
+      title: renumberTitle(b.title, b.order, a.order),
+      updatedAt: Date.now(),
+    };
+    await this.storage.putChapter(aNext);
+    await this.storage.putChapter(bNext);
+    this.chapters.set(
+      this.chapters()
+        .map((c) => (c.id === aNext.id ? aNext : c.id === bNext.id ? bNext : c))
+        .sort((x, y) => x.order - y.order),
+    );
+  }
+
+  /**
    * Delete a chapter of the active story. If it was the only chapter, a fresh
    * empty Chapter 1 takes its place (a story is never chapterless). If it was
    * the active chapter, the prior chapter (or the new first) becomes active.
@@ -376,4 +412,17 @@ export class StoryStore {
 /** Sort stories most-recently-updated first (stable for equal timestamps). */
 function sortByRecent(stories: Story[]): Story[] {
   return [...stories].sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+/** The auto-label a chapter gets at a given zero-based order ("Chapter N"). */
+function chapterLabel(order: number): string {
+  return `Chapter ${order + 1}`;
+}
+
+/**
+ * Renumber a chapter's title when its order changes during a reorder. Only the
+ * default auto-label is rewritten; a custom title is left untouched.
+ */
+function renumberTitle(title: string, fromOrder: number, toOrder: number): string {
+  return title === chapterLabel(fromOrder) ? chapterLabel(toOrder) : title;
 }

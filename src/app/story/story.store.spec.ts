@@ -196,4 +196,45 @@ describe('StoryStore', () => {
     expect(await storage.getStory(doomed)).toBeUndefined();
     expect(await storage.getChapter(chapterId)).toBeUndefined();
   });
+
+  describe('moveChapter', () => {
+    it('swaps order and renumbers auto-labels while keeping the active selection', async () => {
+      const { store } = setup();
+      await store.init(WORLD, ERA);
+      await store.createChapter(); // Chapter 2
+      await store.createChapter(); // Chapter 3
+      const first = store.chapters()[0];
+      const second = store.chapters()[1];
+      store.selectChapter(second.id);
+
+      await store.moveChapter(second.id, -1);
+
+      const ordered = store.chapters();
+      expect(ordered.map((c) => c.id)).toEqual([
+        second.id,
+        first.id,
+        ordered[2].id,
+      ]);
+      expect(ordered[0].order).toBe(0);
+      expect(ordered[1].order).toBe(1);
+      // Auto-labels track the new positions.
+      expect(ordered[0].title).toBe('Chapter 1');
+      expect(ordered[1].title).toBe('Chapter 2');
+      // The moved chapter stays active; its position number follows.
+      expect(store.activeChapterId()).toBe(second.id);
+      expect(store.activeChapterNumber()).toBe(1);
+    });
+
+    it('is a no-op at the ends', async () => {
+      const { store } = setup();
+      await store.init(WORLD, ERA);
+      await store.createChapter();
+      const before = store.chapters().map((c) => c.id);
+
+      await store.moveChapter(before[0], -1); // already first
+      await store.moveChapter(before[before.length - 1], 1); // already last
+
+      expect(store.chapters().map((c) => c.id)).toEqual(before);
+    });
+  });
 });

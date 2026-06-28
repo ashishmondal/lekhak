@@ -228,4 +228,60 @@ describe('EditorComponent', () => {
     expect(comp.stories.activeStory()?.eraId).toBe(bronze.id);
     expect(comp.activeEraName()).toBe('Bronze Age');
   });
+
+  it('reorders the active chapter and updates its pager position', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+
+    await comp.newChapter(); // second chapter is active, at position 2
+    expect(comp.stories.activeChapterNumber()).toBe(2);
+    const movedId = comp.stories.activeChapterId();
+
+    await comp.reorderChapter(-1);
+
+    expect(comp.stories.activeChapterId()).toBe(movedId);
+    expect(comp.stories.activeChapterNumber()).toBe(1);
+  });
+
+  it('deletes the active chapter through confirm and reloads the buffer', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+    const confirmSpy = vi.spyOn(comp, 'confirm').mockReturnValue(true);
+
+    await comp.newChapter(); // 2 chapters; the empty second is active
+    expect(comp.stories.chapterCount()).toBe(2);
+
+    await comp.deleteActiveChapter();
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(comp.stories.chapterCount()).toBe(1);
+    expect(comp.storyText()).toBe(comp.stories.activeChapter()?.body ?? '');
+  });
+
+  it('keeps the chapter when the delete confirm is declined', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+    vi.spyOn(comp, 'confirm').mockReturnValue(false);
+
+    await comp.newChapter();
+    await comp.deleteActiveChapter();
+
+    expect(comp.stories.chapterCount()).toBe(2);
+  });
+
+  it('deletes the active story through confirm', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+    vi.spyOn(comp, 'confirm').mockReturnValue(true);
+
+    comp.newStoryTitle.set('Doomed');
+    await comp.createStory();
+    expect(comp.stories.stories().length).toBe(2);
+    const doomed = comp.stories.activeStoryId();
+
+    await comp.deleteActiveStory();
+
+    expect(comp.stories.stories().some((s: any) => s.id === doomed)).toBe(false);
+    expect(comp.stories.stories().length).toBe(1);
+  });
 });
