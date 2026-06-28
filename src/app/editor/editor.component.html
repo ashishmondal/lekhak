@@ -191,6 +191,7 @@
       @if (gen.streaming()) {
         <button type="button" class="stop" (click)="stop()">Stop</button>
       } @else if (stories.isLatestActive()) {
+        <span class="hint" aria-hidden="true">⏎ to write · ⇧⏎ for a new line</span>
         <button type="button" class="write" (click)="writeNext()">Write next</button>
       } @else {
         <button
