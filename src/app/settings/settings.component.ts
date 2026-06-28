@@ -1,13 +1,23 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AiError } from '../ai/ai-error';
 import { BackupImportError, BackupService } from '../services/backup.service';
-import { SettingsService } from '../services/settings.service';
+import {
+  PROVIDERS,
+  PROVIDER_LABELS,
+  SettingsService,
+} from '../services/settings.service';
 import { ThemeToggleComponent } from '../theme/theme-toggle.component';
 
 type TestState = 'idle' | 'testing' | 'ok' | 'failed';
 type BackupState = 'idle' | 'working' | 'ok' | 'failed';
+
+/** Placeholder hint for each provider's key format. */
+const KEY_PLACEHOLDERS: Record<string, string> = {
+  openai: 'sk-…',
+  gemini: 'AIza…',
+};
 
 /**
  * BYOK settings: the API key, model, and a connection test. Everything writes
@@ -29,6 +39,23 @@ export class SettingsComponent {
 
   protected readonly backupState = signal<BackupState>('idle');
   protected readonly backupMessage = signal('');
+
+  /** Provider options for the picker. */
+  protected readonly providers = PROVIDERS.map((id) => ({
+    id,
+    label: PROVIDER_LABELS[id],
+  }));
+
+  /** Key-format hint for the active provider. */
+  protected readonly keyPlaceholder = computed(
+    () => KEY_PLACEHOLDERS[this.settings.provider()] ?? '',
+  );
+
+  protected onProviderChange(value: string): void {
+    this.settings.setProvider(value);
+    this.testState.set('idle');
+    this.testMessage.set('');
+  }
 
   protected onKeyInput(value: string): void {
     this.settings.setApiKey(value);

@@ -63,7 +63,8 @@
   font-weight: 600;
 }
 
-.field input {
+.field input,
+.field select {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--line);
   border-radius: 0.55rem;
@@ -74,7 +75,8 @@
   color: var(--text);
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
 }

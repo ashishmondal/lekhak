@@ -13,12 +13,24 @@
   </p>
 
   <label class="field">
+    <span>Provider</span>
+    <select
+      [value]="settings.provider()"
+      (change)="onProviderChange($any($event.target).value)"
+    >
+      @for (option of providers; track option.id) {
+        <option [value]="option.id">{{ option.label }}</option>
+      }
+    </select>
+  </label>
+
+  <label class="field">
     <span>API key</span>
     <input
       type="password"
       autocomplete="off"
       spellcheck="false"
-      placeholder="sk-…"
+      [placeholder]="keyPlaceholder()"
       [value]="settings.apiKey()"
       (input)="onKeyInput($any($event.target).value)"
     />
@@ -30,7 +42,7 @@
       type="text"
       autocomplete="off"
       spellcheck="false"
-      placeholder="gpt-4o-mini"
+      [placeholder]="settings.defaultModel()"
       [value]="settings.model()"
       (input)="onModelInput($any($event.target).value)"
     />
