@@ -99,6 +99,29 @@ describe('GeminiProvider', () => {
       { role: 'user', parts: [{ text: 'hi' }] },
     ]);
     expect(sent.safetySettings).toEqual([
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_LOW_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_LOW_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_LOW_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_LOW_AND_ABOVE' },
+    ]);
+  });
+
+  it('relaxes safety filters to BLOCK_NONE in turbo mode', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(sseResponse(deltaFrame('x')));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new GeminiProvider({ apiKey: 'secret' });
+    for await (const _ of provider.generate(messages, {
+      model: 'gemini-2.5-flash',
+      storyName: 'Battle of the Bands_AKM_',
+    })) {
+      // drain
+    }
+
+    expect(provider.turbo).toBe(true);
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(sent.safetySettings).toEqual([
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },

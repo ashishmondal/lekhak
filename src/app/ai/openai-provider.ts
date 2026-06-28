@@ -1,6 +1,7 @@
 import { AiError } from './ai-error';
 import {
   DEFAULT_TEMPERATURE,
+  isTurboStory,
   type AiProvider,
   type ChatMessage,
   type GenerateOpts,
@@ -23,6 +24,8 @@ export interface OpenAiProviderConfig {
  */
 export class OpenAiProvider implements AiProvider {
   readonly id = 'openai';
+  /** Turbo mode for the current run, derived from the story name. Used later. */
+  turbo = false;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
@@ -35,6 +38,7 @@ export class OpenAiProvider implements AiProvider {
     messages: ChatMessage[],
     opts: GenerateOpts,
   ): AsyncIterable<string> {
+    this.turbo = isTurboStory(opts.storyName);
     let res: Response;
     try {
       res = await fetch(`${this.baseUrl}/chat/completions`, {

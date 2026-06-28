@@ -74,6 +74,7 @@ export class GenerationService {
       const stream = this.provider.generate(messages, {
         model: opts.model ?? DEFAULT_MODEL,
         temperature: opts.temperature ?? DEFAULT_TEMPERATURE,
+        storyName: input.story.title,
         signal: controller.signal,
       });
 

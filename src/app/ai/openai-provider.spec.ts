@@ -94,4 +94,25 @@ describe('OpenAiProvider', () => {
     const provider = new OpenAiProvider({ apiKey: 'k' });
     expect(await provider.testConnection('gpt-x')).toBe(false);
   });
+
+  it('sets turbo mode when the story name ends with the marker', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseResponse('data: [DONE]\n\n')));
+    const provider = new OpenAiProvider({ apiKey: 'k' });
+
+    for await (const _ of provider.generate(messages, {
+      model: 'gpt-x',
+      storyName: 'Midnight Heist_AKM_',
+    })) {
+      // drain
+    }
+    expect(provider.turbo).toBe(true);
+
+    for await (const _ of provider.generate(messages, {
+      model: 'gpt-x',
+      storyName: 'Midnight Heist',
+    })) {
+      // drain
+    }
+    expect(provider.turbo).toBe(false);
+  });
 });

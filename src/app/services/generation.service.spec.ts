@@ -144,4 +144,16 @@ describe('GenerationService', () => {
     await collect(svc.generate(input()));
     expect(svc.error()).toBeNull();
   });
+
+  it('forwards the story name to the provider for turbo detection', async () => {
+    const provider = new FakeProvider({ chunks: ['x'] });
+    const { svc } = configure(provider);
+    const cfg = input();
+    cfg.story = { ...cfg.story, title: 'Midnight Caper_AKM_' };
+
+    await collect(svc.generate(cfg));
+
+    expect(provider.lastOpts?.storyName).toBe('Midnight Caper_AKM_');
+    expect(provider.turbo).toBe(true);
+  });
 });

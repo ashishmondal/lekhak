@@ -1,5 +1,10 @@
 import { AiError } from './ai-error';
-import type { AiProvider, ChatMessage, GenerateOpts } from './ai-provider';
+import {
+  isTurboStory,
+  type AiProvider,
+  type ChatMessage,
+  type GenerateOpts,
+} from './ai-provider';
 
 export interface FakeProviderOptions {
   /** Tokens to stream, in order. */
@@ -24,6 +29,10 @@ export class FakeProvider implements AiProvider {
   readonly id = 'fake';
   /** Messages captured from the most recent generate call, for assertions. */
   lastMessages: ChatMessage[] = [];
+  /** Opts captured from the most recent generate call, for assertions. */
+  lastOpts: GenerateOpts | null = null;
+  /** Turbo mode for the current run, derived from the story name. Used later. */
+  turbo = false;
 
   constructor(private readonly opts: FakeProviderOptions = {}) {}
 
@@ -32,6 +41,8 @@ export class FakeProvider implements AiProvider {
     opts: GenerateOpts,
   ): AsyncIterable<string> {
     this.lastMessages = messages;
+    this.lastOpts = opts;
+    this.turbo = isTurboStory(opts.storyName);
     const chunks = this.opts.chunks ?? DEFAULT_CHUNKS;
 
     let yielded = 0;

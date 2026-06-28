@@ -2,6 +2,15 @@
   <header class="bar">
     <h1>lekhak<span class="brand-dot">.</span></h1>
     <div class="status">
+      @if (turbo()) {
+        <span
+          class="turbo"
+          title="Turbo mode is on for this story."
+          aria-label="Turbo mode on"
+        >
+          <span class="turbo-dot" aria-hidden="true"></span>Turbo
+        </span>
+      }
       @if (gen.streaming()) {
         <span class="dot" aria-hidden="true"></span>
         <span>Writing…</span>

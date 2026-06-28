@@ -373,5 +373,20 @@ describe('EditorComponent — consistency surfaces', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].draft).toContain('harbor');
   });
+
+  it('shows a turbo indicator when the story name ends with the marker', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.turbo')).toBeNull();
+    expect(comp.turbo()).toBe(false);
+
+    comp.newStoryTitle.set('Midnight Heist_AKM_');
+    await comp.createStory();
+    fixture.detectChanges();
+
+    expect(comp.turbo()).toBe(true);
+    expect(el.querySelector('.turbo')).toBeTruthy();
+  });
 });
 

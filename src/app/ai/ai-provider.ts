@@ -16,6 +16,11 @@ export interface GenerateOpts {
   /** Default 0.8 for prose. */
   temperature?: number;
   maxTokens?: number;
+  /**
+   * The active story's title. Providers read this to decide whether to run in
+   * turbo mode (see {@link isTurboStory}); it is not sent to the model.
+   */
+  storyName?: string;
   /** For cancel + mid-stream abort. */
   signal?: AbortSignal;
 }
@@ -32,3 +37,15 @@ export const DEFAULT_TEMPERATURE = 0.8;
 
 /** Fallback model id until Settings provides one. */
 export const DEFAULT_MODEL = 'gpt-4o-mini';
+
+/** A story whose title ends with this marker opts into turbo mode. */
+export const TURBO_SUFFIX = '_AKM_';
+
+/**
+ * Whether a story name opts into turbo mode. Shared by the providers (which set
+ * a `turbo` flag from it) and the UI (which shows a subtle indicator), so the
+ * rule lives in exactly one place.
+ */
+export function isTurboStory(name: string | undefined): boolean {
+  return !!name && name.trimEnd().endsWith(TURBO_SUFFIX);
+}

@@ -1,6 +1,7 @@
 import { AiError } from './ai-error';
 import {
   DEFAULT_TEMPERATURE,
+  isTurboStory,
   type AiProvider,
   type ChatMessage,
   type GenerateOpts,
@@ -8,19 +9,6 @@ import {
 import { parseSseFrames } from './sse';
 
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
-
-/**
- * Disable every content filter. Fiction routinely trips Gemini's default
- * thresholds (violence, romance, etc.), so each category is set to BLOCK_NONE
- * to keep the co-writer from silently dropping passages mid-stream.
- */
-const SAFETY_SETTINGS = [
-  'HARM_CATEGORY_HARASSMENT',
-  'HARM_CATEGORY_HATE_SPEECH',
-  'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-  'HARM_CATEGORY_DANGEROUS_CONTENT',
-  'HARM_CATEGORY_CIVIC_INTEGRITY',
-].map((category) => ({ category, threshold: 'BLOCK_NONE' }));
 
 export interface GeminiProviderConfig {
   apiKey: string;
@@ -55,6 +43,8 @@ interface GeminiContent {
  */
 export class GeminiProvider implements AiProvider {
   readonly id = 'gemini';
+  /** Turbo mode for the current run, derived from the story name. Used later. */
+  turbo = false;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
@@ -67,10 +57,22 @@ export class GeminiProvider implements AiProvider {
     messages: ChatMessage[],
     opts: GenerateOpts,
   ): AsyncIterable<string> {
+    this.turbo = isTurboStory(opts.storyName);
     const { contents, systemInstruction } = toGeminiRequest(messages);
     const url =
       `${this.baseUrl}/models/${encodeURIComponent(opts.model)}` +
       ':streamGenerateContent?alt=sse';
+
+    const safetySettings = [
+      'HARM_CATEGORY_HARASSMENT',
+      'HARM_CATEGORY_HATE_SPEECH',
+      'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+      'HARM_CATEGORY_DANGEROUS_CONTENT',
+      'HARM_CATEGORY_CIVIC_INTEGRITY',
+    ].map((category) => ({
+      category,
+      threshold: this.turbo ? 'BLOCK_NONE' : 'BLOCK_LOW_AND_ABOVE',
+    }));
 
     let res: Response;
     try {
@@ -83,7 +85,7 @@ export class GeminiProvider implements AiProvider {
         body: JSON.stringify({
           ...(systemInstruction ? { systemInstruction } : {}),
           contents,
-          safetySettings: SAFETY_SETTINGS,
+          safetySettings,
           generationConfig: {
             temperature: opts.temperature ?? DEFAULT_TEMPERATURE,
             ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),

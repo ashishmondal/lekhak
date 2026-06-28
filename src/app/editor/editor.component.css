@@ -484,6 +484,26 @@ button:disabled {
   cursor: pointer;
 }
 
+/* Turbo-mode marker: a quiet accent label, not a loud badge. */
+.turbo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.turbo-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0.35rem var(--accent);
+}
+
 .popover {
   position: relative;
   display: inline-flex;

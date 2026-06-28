@@ -11,6 +11,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 
 import type { AiErrorKind } from '../ai/ai-error';
+import { isTurboStory } from '../ai/ai-provider';
 import {
   DEFAULT_STYLE,
   WRITING_STYLES,
@@ -117,6 +118,11 @@ export class EditorComponent implements OnInit {
   /** Names of the cards the last run actually sent, for the resolved-cards chip. */
   protected readonly usedCardNames = computed(() =>
     this.gen.usedCards().map((c) => c.name),
+  );
+
+  /** Turbo mode for the active story (its title ends with the turbo marker). */
+  protected readonly turbo = computed(() =>
+    isTurboStory(this.stories.activeStory()?.title),
   );
 
   /** Whether the inline `@`-mention character picker is open. */
