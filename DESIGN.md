@@ -38,11 +38,13 @@ toggle (`system → light → dark`), persisted to `localStorage` key `lekhak.th
 
 ## Typography
 
-| Role | Light | Dark |
-|---|---|---|
-| `--font-display` (wordmark, headings, Write button) | Fraunces | Newsreader |
-| `--font-body` (story prose) | Spectral | Newsreader |
-| `--font-ui` (nav, library, chrome) | Inter | Inter |
+Variant A (Manuscript) typography is used in **both** themes:
+
+| Role | Font |
+|---|---|
+| `--font-display` (wordmark, headings, Write button) | Fraunces |
+| `--font-body` (story prose) | Spectral |
+| `--font-ui` (nav, library, chrome) | Inter |
 
 Loaded via Google Fonts in [src/index.html](src/index.html). Story prose:
 `1.08rem / line-height 1.75`.

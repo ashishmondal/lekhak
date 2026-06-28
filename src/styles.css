@@ -113,10 +113,6 @@
   --bg-grad: radial-gradient(140% 90% at 50% -20%, #221a13 0%, var(--bg) 55%);
   --sheet-shadow: 0 24px 48px -30px rgba(0, 0, 0, 0.8);
   --accent-text-glow: 0 0 12px rgba(230, 169, 63, 0.6);
-
-  /* Newsreader carries both display and body weight in the dark theme. */
-  --font-body: 'Newsreader', Georgia, serif;
-  --font-display: 'Newsreader', Georgia, serif;
 }
 
 html,
