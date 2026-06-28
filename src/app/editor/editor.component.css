@@ -72,16 +72,39 @@
 }
 
 .save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+.save::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--ok);
 }
 
 .save-saving {
   color: var(--warn);
 }
 
+.save-saving::before {
+  background: var(--warn);
+}
+
 .save-failed {
   color: var(--danger);
   font-weight: 600;
+}
+
+.save-failed::before {
+  background: var(--danger);
 }
 
 .settings-link {
