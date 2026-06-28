@@ -18,7 +18,9 @@ import {
   isWritingStyleId,
   type WritingStyleId,
 } from '../ai/writing-style';
-import type { ContextInput } from '../context/context-builder';
+import { resolveCard, type ContextInput } from '../context/context-builder';
+import type { Card } from '../models/domain';
+import { findActiveMention, rankCharacters } from './mention';
 import { GenerationService } from '../services/generation.service';
 import { Autosave } from '../services/autosave';
 import { SettingsService } from '../services/settings.service';
@@ -112,8 +114,26 @@ export class EditorComponent implements OnInit {
     this.gen.usedCards().map((c) => c.name),
   );
 
+  /** Whether the inline `@`-mention character picker is open. */
+  protected readonly mentionOpen = signal(false);
+  /** Era-resolved character cards offered by the open mention picker. */
+  protected readonly mentionItems = signal<Card[]>([]);
+  /** Highlighted row in the mention picker (keyboard + hover). */
+  protected readonly mentionIndex = signal(0);
+  /** Absolute position of the mention picker, anchored to the caret. */
+  protected readonly mentionStyle = signal<{ top: string; left: string }>({
+    top: '0',
+    left: '0',
+  });
+  /** Index of the `@` that opened the current picker, for replacement. */
+  private mentionStart = -1;
+  /** Which textarea the open picker is editing, so insertion targets it. */
+  private mentionField: 'story' | 'beat' | null = null;
+
   private readonly storyBox =
     viewChild<ElementRef<HTMLTextAreaElement>>('storyBox');
+  private readonly beatBox =
+    viewChild<ElementRef<HTMLTextAreaElement>>('beatBox');
 
   /** The chapter/story overflow menu, closed on outside-click and Escape. */
   private readonly moreMenu =
@@ -302,17 +322,171 @@ export class EditorComponent implements OnInit {
     return globalThis.confirm?.(message) ?? false;
   }
 
-  protected onStoryInput(value: string): void {
-    this.storyText.set(value);
+  protected onStoryInput(box: HTMLTextAreaElement): void {
+    this.storyText.set(box.value);
     this.markDirty();
+    this.updateMention('story', box);
+  }
+
+  protected onBeatInput(box: HTMLTextAreaElement): void {
+    this.nextBeat.set(box.value);
+    this.updateMention('beat', box);
   }
 
   protected onStoryScroll(box: HTMLTextAreaElement): void {
     this.stick =
       box.scrollTop + box.clientHeight >= box.scrollHeight - SCROLL_EPSILON;
+    if (this.mentionOpen()) {
+      this.positionMention(box);
+    }
+  }
+
+  /** Reposition the picker when the (short) beat box scrolls under the caret. */
+  protected onBeatScroll(box: HTMLTextAreaElement): void {
+    if (this.mentionOpen()) {
+      this.positionMention(box);
+    }
+  }
+
+  /**
+   * Refresh the `@`-mention picker against the caret of `box`. Opens it when an
+   * active mention resolves to one or more characters, otherwise closes it.
+   * Cards are era-resolved first so suggestions (and the inserted name) match
+   * the story's locked era. Works for both the story box and the beat box.
+   */
+  private updateMention(field: 'story' | 'beat', box: HTMLTextAreaElement): void {
+    const caret = box.selectionStart ?? box.value.length;
+    const mention = findActiveMention(box.value, caret);
+    if (!mention) {
+      this.closeMention();
+      return;
+    }
+    const eraId = this.stories.activeStory()?.eraId ?? '';
+    const resolved = this.world.cards().map((card) => resolveCard(card, eraId));
+    const items = rankCharacters(resolved, mention.query);
+    if (!items.length) {
+      this.closeMention();
+      return;
+    }
+    this.mentionField = field;
+    this.mentionStart = mention.start;
+    this.mentionItems.set(items);
+    this.mentionIndex.set(0);
+    this.mentionOpen.set(true);
+    this.positionMention(box);
+  }
+
+  /**
+   * Anchor the picker to the caret in viewport space (the two textareas live in
+   * different containers, so the menu is `position: fixed`). Flips above the
+   * line when there isn't room below — important for the bottom beat box.
+   */
+  private positionMention(box: HTMLTextAreaElement): void {
+    const coords = caretCoordinates(box, this.mentionStart);
+    const rect = box.getBoundingClientRect();
+    const left = rect.left + coords.left - box.scrollLeft;
+    const lineTop = rect.top + coords.top - box.scrollTop;
+    const estHeight = Math.min(this.mentionItems().length, 6) * 40 + 8;
+
+    let top = lineTop + coords.height;
+    if (top + estHeight > window.innerHeight && lineTop - estHeight > 0) {
+      top = lineTop - estHeight; // not enough room below — open upward
+    }
+    this.mentionStyle.set({ top: `${top}px`, left: `${left}px` });
+  }
+
+  protected closeMention(): void {
+    if (this.mentionOpen()) {
+      this.mentionOpen.set(false);
+    }
+    this.mentionStart = -1;
+    this.mentionField = null;
+  }
+
+  /**
+   * Keyboard control for the open picker: arrows move the highlight, Enter/Tab
+   * accept the canonical name, Escape dismisses. No-ops (and lets the key pass
+   * through) when the picker is closed, so newlines and beat-submit still work.
+   */
+  protected onMentionKeydown(event: KeyboardEvent): void {
+    if (!this.mentionOpen()) {
+      return;
+    }
+    const items = this.mentionItems();
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.mentionIndex.update((i) => (i + 1) % items.length);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.mentionIndex.update((i) => (i - 1 + items.length) % items.length);
+        break;
+      case 'Enter':
+      case 'Tab':
+        event.preventDefault();
+        this.applyMention(items[this.mentionIndex()]);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.closeMention();
+        break;
+    }
+  }
+
+  /**
+   * Replace the typed `@query` with the card's canonical, era-resolved name —
+   * this is what guarantees a spelling the relevance pass will always match.
+   * Targets whichever field opened the picker, leaves a trailing space, and
+   * restores the caret after the inserted name.
+   */
+  protected applyMention(card: Card): void {
+    const field = this.mentionField;
+    if (!field || this.mentionStart < 0) {
+      return;
+    }
+    const target = field === 'story' ? this.storyText : this.nextBeat;
+    const box = this.boxFor(field);
+    const text = target();
+    const caret = box?.selectionStart ?? text.length;
+
+    const before = text.slice(0, this.mentionStart);
+    const after = text.slice(caret);
+    const needsSpace = !after.startsWith(' ');
+    const next = `${before}${card.name}${needsSpace ? ' ' : ''}${after}`;
+    const caretPos = before.length + card.name.length + (needsSpace ? 1 : 0);
+
+    target.set(next);
+    if (field === 'story') {
+      this.markDirty();
+    }
+    this.closeMention();
+
+    // The textarea value is one-way bound; restore focus + caret after Angular
+    // flushes the new value on the next frame.
+    requestAnimationFrame(() => {
+      const el = this.boxFor(field);
+      if (el) {
+        el.focus();
+        el.setSelectionRange(caretPos, caretPos);
+      }
+    });
+  }
+
+  /** Native textarea backing the given mention field, if rendered. */
+  private boxFor(field: 'story' | 'beat'): HTMLTextAreaElement | undefined {
+    return field === 'story'
+      ? this.storyBox()?.nativeElement
+      : this.beatBox()?.nativeElement;
   }
 
   protected onBeatKeydown(event: KeyboardEvent): void {
+    if (this.mentionOpen()) {
+      this.onMentionKeydown(event);
+      if (event.defaultPrevented) {
+        return; // the picker consumed this key (e.g. Enter accepted a name)
+      }
+    }
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       void this.writeNext();
@@ -441,3 +615,70 @@ export class EditorComponent implements OnInit {
     return this.stories.saveActiveBody(this.storyText());
   }
 }
+
+/** Style properties copied onto the mirror so it wraps text exactly as the box does. */
+const MIRROR_PROPS = [
+  'boxSizing',
+  'width',
+  'height',
+  'borderTopWidth',
+  'borderRightWidth',
+  'borderBottomWidth',
+  'borderLeftWidth',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'fontStyle',
+  'fontVariant',
+  'fontWeight',
+  'fontStretch',
+  'fontSize',
+  'lineHeight',
+  'fontFamily',
+  'textAlign',
+  'textTransform',
+  'textIndent',
+  'letterSpacing',
+  'wordSpacing',
+  'tabSize',
+] as const;
+
+/**
+ * Pixel position of a character index inside a textarea, via the standard
+ * hidden-mirror technique: clone the box's text-layout styles into an
+ * off-screen div, place a marker span at the index, and read its offset. Used to
+ * anchor the `@`-mention picker to the caret.
+ */
+function caretCoordinates(
+  el: HTMLTextAreaElement,
+  index: number,
+): { top: number; left: number; height: number } {
+  const doc = el.ownerDocument;
+  const computed = getComputedStyle(el);
+  const mirror = doc.createElement('div');
+  const style = mirror.style;
+  style.position = 'absolute';
+  style.top = '0';
+  style.left = '-9999px';
+  style.visibility = 'hidden';
+  style.whiteSpace = 'pre-wrap';
+  style.overflowWrap = 'break-word';
+  for (const prop of MIRROR_PROPS) {
+    style[prop] = computed[prop];
+  }
+
+  mirror.textContent = el.value.slice(0, index);
+  const marker = doc.createElement('span');
+  marker.textContent = el.value.slice(index) || '.';
+  mirror.appendChild(marker);
+  doc.body.appendChild(mirror);
+
+  const top = marker.offsetTop + parseFloat(computed.borderTopWidth);
+  const left = marker.offsetLeft + parseFloat(computed.borderLeftWidth);
+  const height = parseFloat(computed.lineHeight) || marker.offsetHeight;
+
+  doc.body.removeChild(mirror);
+  return { top, left, height };
+}
+

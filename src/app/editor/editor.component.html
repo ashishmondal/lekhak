@@ -181,28 +181,35 @@
     </p>
   }
 
-  <textarea
-    #storyBox
-    class="story"
-    aria-label="Story"
-    placeholder="Your story grows here. Write the opening, or describe the next beat below and let the co-writer continue."
-    [value]="storyText()"
-    (input)="onStoryInput($any($event.target).value)"
-    (scroll)="onStoryScroll(storyBox)"
-  ></textarea>
+  <div class="story-wrap">
+    <textarea
+      #storyBox
+      class="story"
+      aria-label="Story"
+      placeholder="Your story grows here. Write the opening, or describe the next beat below and let the co-writer continue. Type @ to mention a character."
+      [value]="storyText()"
+      (input)="onStoryInput(storyBox)"
+      (keydown)="onMentionKeydown($event)"
+      (scroll)="onStoryScroll(storyBox)"
+      (blur)="closeMention()"
+    ></textarea>
+  </div>
 
   <div class="next">
     @if (lastBeat(); as beat) {
       <p class="ghost">Last: {{ beat }}</p>
     }
     <textarea
+      #beatBox
       class="beat"
       aria-label="What happens next"
-      placeholder="What happens next? (Enter to write)"
+      placeholder="What happens next? (Enter to write · @ to mention a character)"
       rows="2"
       [value]="nextBeat()"
-      (input)="nextBeat.set($any($event.target).value)"
+      (input)="onBeatInput(beatBox)"
       (keydown)="onBeatKeydown($event)"
+      (scroll)="onBeatScroll(beatBox)"
+      (blur)="closeMention()"
     ></textarea>
 
     <div class="actions">
@@ -224,4 +231,34 @@
       }
     </div>
   </div>
+
+  @if (mentionOpen()) {
+    <ul
+      class="mention-menu"
+      role="listbox"
+      aria-label="Insert character"
+      [style.top]="mentionStyle().top"
+      [style.left]="mentionStyle().left"
+    >
+      @for (item of mentionItems(); track item.id; let i = $index) {
+        <li role="presentation">
+          <button
+            type="button"
+            role="option"
+            class="mention-item"
+            [class.active]="i === mentionIndex()"
+            [attr.aria-selected]="i === mentionIndex()"
+            (mousedown)="$event.preventDefault()"
+            (mouseenter)="mentionIndex.set(i)"
+            (click)="applyMention(item)"
+          >
+            <span class="mention-name">{{ item.name }}</span>
+            @if (item.aliases?.length) {
+              <span class="mention-alias">{{ item.aliases?.join(', ') }}</span>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  }
 </section>

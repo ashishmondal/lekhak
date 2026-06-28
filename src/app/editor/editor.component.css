@@ -128,6 +128,58 @@
   color: var(--faint);
 }
 
+/* --- @-mention character picker, anchored to the caret --- */
+.story-wrap {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.mention-menu {
+  position: fixed;
+  z-index: 10;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  min-width: 11rem;
+  max-width: 18rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-menu);
+}
+
+.mention-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  width: 100%;
+  padding: 0.35rem 0.55rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mention-item.active {
+  background: var(--surface-3);
+}
+
+.mention-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mention-alias {
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
 .next {
   display: flex;
   flex-direction: column;

@@ -17,6 +17,11 @@ import { EditorComponent } from './editor.component';
 
 let navigateSpy: ReturnType<typeof vi.fn>;
 
+/** Minimal stand-in for the story <textarea> that onStoryInput now reads from. */
+function storyBox(value: string): HTMLTextAreaElement {
+  return { value, selectionStart: value.length } as HTMLTextAreaElement;
+}
+
 function configure(provider: FakeProvider): void {
   TestBed.configureTestingModule({
     imports: [EditorComponent],
@@ -123,7 +128,7 @@ describe('EditorComponent', () => {
     const fixture = await render(new FakeProvider());
     const comp = fixture.componentInstance as any;
 
-    comp.onStoryInput('A durable sentence.');
+    comp.onStoryInput(storyBox('A durable sentence.'));
     await comp.autosave.flush();
 
     const stored = await TestBed.inject(StorageService).getChapter(
@@ -188,7 +193,7 @@ describe('EditorComponent', () => {
     const comp = fixture.componentInstance as any;
 
     await comp.newChapter(); // open an empty second chapter
-    comp.onStoryInput('Chapter two words.');
+    comp.onStoryInput(storyBox('Chapter two words.'));
     await comp.stepChapter(-1); // leaving ch2 must persist its body first
 
     const chapters = await TestBed.inject(StorageService).getChaptersByStory(
