@@ -36,15 +36,6 @@
       </select>
     </label>
 
-    <button
-      type="button"
-      class="lib-btn danger-btn"
-      aria-label="Delete story"
-      title="Delete this story and all its chapters"
-      [disabled]="gen.streaming()"
-      (click)="deleteActiveStory()"
-    >Delete story</button>
-
     <div class="pager" role="group" aria-label="Chapter">
       <button
         type="button"
@@ -63,36 +54,6 @@
         [disabled]="stories.activeChapterNumber() >= stories.chapterCount()"
         (click)="stepChapter(1)"
       >›</button>
-    </div>
-
-    <div class="chapter-actions" role="group" aria-label="Chapter actions">
-      <button
-        type="button"
-        class="page"
-        aria-label="Move chapter earlier"
-        title="Move chapter earlier"
-        [disabled]="gen.streaming() || stories.activeChapterNumber() <= 1"
-        (click)="reorderChapter(-1)"
-      >↤</button>
-      <button
-        type="button"
-        class="page"
-        aria-label="Move chapter later"
-        title="Move chapter later"
-        [disabled]="
-          gen.streaming() ||
-          stories.activeChapterNumber() >= stories.chapterCount()
-        "
-        (click)="reorderChapter(1)"
-      >↦</button>
-      <button
-        type="button"
-        class="lib-btn danger-btn"
-        aria-label="Delete chapter"
-        title="Delete this chapter"
-        [disabled]="gen.streaming()"
-        (click)="deleteActiveChapter()"
-      >Delete ch.</button>
     </div>
 
     <button
@@ -142,6 +103,46 @@
         + Story
       </button>
     }
+
+    <details class="overflow" #moreMenu>
+      <summary class="more" aria-label="More actions" title="Chapter and story actions">⋯</summary>
+      <div class="menu" role="menu">
+        <span class="menu-group-label" id="menu-chapter">Chapter</span>
+        <button
+          type="button"
+          class="menu-item"
+          role="menuitem"
+          [disabled]="gen.streaming() || stories.activeChapterNumber() <= 1"
+          (click)="reorderChapter(-1); moreMenu.open = false"
+        >Move earlier</button>
+        <button
+          type="button"
+          class="menu-item"
+          role="menuitem"
+          [disabled]="
+            gen.streaming() ||
+            stories.activeChapterNumber() >= stories.chapterCount()
+          "
+          (click)="reorderChapter(1); moreMenu.open = false"
+        >Move later</button>
+        <button
+          type="button"
+          class="menu-item danger"
+          role="menuitem"
+          [disabled]="gen.streaming()"
+          (click)="deleteActiveChapter(); moreMenu.open = false"
+        >Delete chapter</button>
+        <div class="menu-sep" role="separator"></div>
+        <span class="menu-group-label" id="menu-story">Story</span>
+        <button
+          type="button"
+          class="menu-item danger"
+          role="menuitem"
+          [disabled]="gen.streaming()"
+          (click)="deleteActiveStory(); moreMenu.open = false"
+        >Delete story</button>
+      </div>
+    </details>
   </nav>
 
   @if (activeEraName(); as era) {
