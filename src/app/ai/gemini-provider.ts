@@ -9,6 +9,19 @@ import { parseSseFrames } from './sse';
 
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
+/**
+ * Disable every content filter. Fiction routinely trips Gemini's default
+ * thresholds (violence, romance, etc.), so each category is set to BLOCK_NONE
+ * to keep the co-writer from silently dropping passages mid-stream.
+ */
+const SAFETY_SETTINGS = [
+  'HARM_CATEGORY_HARASSMENT',
+  'HARM_CATEGORY_HATE_SPEECH',
+  'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+  'HARM_CATEGORY_DANGEROUS_CONTENT',
+  'HARM_CATEGORY_CIVIC_INTEGRITY',
+].map((category) => ({ category, threshold: 'BLOCK_NONE' }));
+
 export interface GeminiProviderConfig {
   apiKey: string;
   /** Override for proxies / compatible endpoints. */
@@ -70,6 +83,7 @@ export class GeminiProvider implements AiProvider {
         body: JSON.stringify({
           ...(systemInstruction ? { systemInstruction } : {}),
           contents,
+          safetySettings: SAFETY_SETTINGS,
           generationConfig: {
             temperature: opts.temperature ?? DEFAULT_TEMPERATURE,
             ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),

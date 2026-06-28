@@ -98,6 +98,13 @@ describe('GeminiProvider', () => {
     expect(sent.contents).toEqual([
       { role: 'user', parts: [{ text: 'hi' }] },
     ]);
+    expect(sent.safetySettings).toEqual([
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
+    ]);
   });
 
   it('testConnection returns true on an OK models response', async () => {
