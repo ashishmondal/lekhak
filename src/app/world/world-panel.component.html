@@ -1,0 +1,121 @@
+<div class="panel">
+  <header class="bar">
+    <a class="back" routerLink="/">← Back to writing</a>
+    <h1>World</h1>
+  </header>
+
+  <app-era-manager />
+
+  <section class="cards">
+    <div class="cards-head">
+      <h2>Cards</h2>
+      @if (store.eras().length > 1) {
+        <label class="era-pick">
+          Overlay era
+          <select
+            [value]="store.currentEraId()"
+            (change)="store.setCurrentEra($any($event.target).value)"
+          >
+            @for (era of store.eras(); track era.id) {
+              <option [value]="era.id">{{ era.name }}</option>
+            }
+          </select>
+        </label>
+      }
+    </div>
+    <p class="hint">
+      Cards are your world bible. The AI keeps them as canon. Per-era overlays
+      let a character or place change over time without forgetting the base.
+    </p>
+
+    <form class="add-card" (submit)="addCard(); $event.preventDefault()">
+      <select
+        aria-label="Card type"
+        [value]="newType()"
+        (change)="newType.set($any($event.target).value)"
+      >
+        @for (type of types; track type) {
+          <option [value]="type">{{ type }}</option>
+        }
+      </select>
+      <input
+        type="text"
+        aria-label="Card name"
+        placeholder="Name"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+      />
+      <input
+        type="text"
+        aria-label="Card notes"
+        placeholder="Notes (who/what they are)"
+        [value]="newNotes()"
+        (input)="newNotes.set($any($event.target).value)"
+      />
+      <button type="submit">Add card</button>
+    </form>
+
+    @if (store.cards().length === 0) {
+      <p class="empty">No cards yet. Add the people, places, and lore the AI should remember.</p>
+    }
+
+    <ul class="card-list">
+      @for (card of store.cards(); track card.id) {
+        <li class="card">
+          <div class="card-top">
+            <span class="badge badge-{{ card.type }}">{{ card.type }}</span>
+            <input
+              class="card-name"
+              type="text"
+              aria-label="Name"
+              [value]="card.name"
+              (change)="renameCard(card, $any($event.target).value)"
+            />
+            <button
+              type="button"
+              class="danger"
+              aria-label="Delete card"
+              (click)="requestDelete(card)"
+            >Delete</button>
+          </div>
+
+          @if (pendingDelete() === card.id) {
+            <div class="confirm" role="alert">
+              <span>"{{ card.name }}" appears in your story. Delete anyway?</span>
+              <button type="button" class="danger" (click)="confirmDelete(card.id)">Delete</button>
+              <button type="button" (click)="cancelDelete()">Keep</button>
+            </div>
+          }
+
+          <textarea
+            class="card-notes"
+            aria-label="Notes"
+            rows="2"
+            [value]="card.notes"
+            (change)="setNotes(card, $any($event.target).value)"
+          ></textarea>
+
+          @if (store.eras().length > 1) {
+            <details class="overlay">
+              <summary>Overlay for this era</summary>
+              <input
+                type="text"
+                aria-label="Overlay name"
+                [placeholder]="card.name"
+                [value]="overlayName(card)"
+                (change)="setOverlayName(card, $any($event.target).value)"
+              />
+              <textarea
+                aria-label="Overlay notes"
+                rows="2"
+                [placeholder]="card.notes"
+                [value]="overlayNotes(card)"
+                (change)="setOverlayNotes(card, $any($event.target).value)"
+              ></textarea>
+            </details>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+</div>

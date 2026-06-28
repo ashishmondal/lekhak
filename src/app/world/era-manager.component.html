@@ -1,0 +1,56 @@
+<section class="eras">
+  <h2>Eras</h2>
+  <p class="hint">
+    Eras are points in your world's timeline. A story is anchored to one era,
+    and cards can change per era.
+  </p>
+
+  @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <ul class="list">
+    @for (era of store.eras(); track era.id) {
+      <li class="row">
+        <input
+          class="name"
+          type="text"
+          aria-label="Era name"
+          [value]="era.name"
+          (change)="rename(era.id, $any($event.target).value)"
+        />
+        <div class="controls">
+          <button
+            type="button"
+            aria-label="Move earlier"
+            [disabled]="$first"
+            (click)="move(era.id, -1)"
+          >↑</button>
+          <button
+            type="button"
+            aria-label="Move later"
+            [disabled]="$last"
+            (click)="move(era.id, 1)"
+          >↓</button>
+          <button
+            type="button"
+            class="danger"
+            aria-label="Delete era"
+            (click)="remove(era.id)"
+          >Delete</button>
+        </div>
+      </li>
+    }
+  </ul>
+
+  <div class="add">
+    <input
+      type="text"
+      placeholder="New era (e.g. Five years on)"
+      [value]="newName()"
+      (input)="newName.set($any($event.target).value)"
+      (keydown.enter)="add()"
+    />
+    <button type="button" (click)="add()">Add era</button>
+  </div>
+</section>

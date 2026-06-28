@@ -1,0 +1,67 @@
+<section class="editor">
+  <header class="bar">
+    <h1>lekhak</h1>
+    <div class="status">
+      @if (gen.streaming()) {
+        <span class="dot" aria-hidden="true"></span>
+        <span>Writing…</span>
+      }
+      <span class="save save-{{ autosave.state() }}">{{ saveLabel() }}</span>
+      @if (gen.trimmedNote(); as note) {
+        <span class="chip" title="{{ note }}">{{ note }}</span>
+      }
+      @if (usedCardNames().length > 0) {
+        <span
+          class="chip"
+          title="Cards the AI used: {{ usedCardNames().join(', ') }}"
+        >{{ usedCardNames().length }} card{{ usedCardNames().length === 1 ? '' : 's' }} in play</span>
+      }
+      <a class="settings-link" routerLink="/world">World</a>
+      <a class="settings-link" routerLink="/settings">Settings</a>
+    </div>
+  </header>
+
+  @if (errorMessage(); as message) {
+    <p class="banner" role="alert">{{ message }}</p>
+  }
+
+  @if (storageFull()) {
+    <p class="banner" role="alert">
+      Your browser storage is full. <a routerLink="/settings">Export a backup</a>
+      and free some space, then keep writing.
+    </p>
+  }
+
+  <textarea
+    #storyBox
+    class="story"
+    aria-label="Story"
+    placeholder="Your story grows here. Write the opening, or describe the next beat below and let the co-writer continue."
+    [value]="storyText()"
+    (input)="onStoryInput($any($event.target).value)"
+    (scroll)="onStoryScroll(storyBox)"
+  ></textarea>
+
+  <div class="next">
+    @if (lastBeat(); as beat) {
+      <p class="ghost">Last: {{ beat }}</p>
+    }
+    <textarea
+      class="beat"
+      aria-label="What happens next"
+      placeholder="What happens next? (Enter to write)"
+      rows="2"
+      [value]="nextBeat()"
+      (input)="nextBeat.set($any($event.target).value)"
+      (keydown)="onBeatKeydown($event)"
+    ></textarea>
+
+    <div class="actions">
+      @if (gen.streaming()) {
+        <button type="button" class="stop" (click)="stop()">Stop</button>
+      } @else {
+        <button type="button" class="write" (click)="writeNext()">Write next</button>
+      }
+    </div>
+  </div>
+</section>

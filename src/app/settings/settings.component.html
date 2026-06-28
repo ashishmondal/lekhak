@@ -1,0 +1,80 @@
+<section class="settings">
+  <header class="bar">
+    <h1>Settings</h1>
+    <a class="back" routerLink="/">Back to writing</a>
+  </header>
+
+  <p class="note">
+    Bring your own key. It is stored only in this browser and sent directly to
+    the provider — never to any server of ours.
+  </p>
+
+  <label class="field">
+    <span>API key</span>
+    <input
+      type="password"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="sk-…"
+      [value]="settings.apiKey()"
+      (input)="onKeyInput($any($event.target).value)"
+    />
+  </label>
+
+  <label class="field">
+    <span>Model</span>
+    <input
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="gpt-4o-mini"
+      [value]="settings.model()"
+      (input)="onModelInput($any($event.target).value)"
+    />
+  </label>
+
+  <div class="actions">
+    <button
+      type="button"
+      class="test"
+      [disabled]="testState() === 'testing'"
+      (click)="testConnection()"
+    >
+      {{ testState() === 'testing' ? 'Testing…' : 'Test connection' }}
+    </button>
+    @if (testMessage(); as message) {
+      <span class="result result-{{ testState() }}">{{ message }}</span>
+    }
+  </div>
+
+  <hr class="rule" />
+
+  <section class="backup">
+    <h2>Backup</h2>
+    <p class="note">
+      Your library lives only in this browser. Export a backup before clearing
+      data or switching machines. Importing replaces everything here.
+    </p>
+    <div class="actions">
+      <button
+        type="button"
+        class="test"
+        [disabled]="backupState() === 'working'"
+        (click)="exportBackup()"
+      >
+        Export backup
+      </button>
+      <label class="import">
+        Import backup
+        <input
+          type="file"
+          accept="application/json,.json"
+          (change)="onImportFile($any($event.target))"
+        />
+      </label>
+      @if (backupMessage(); as message) {
+        <span class="result result-{{ backupState() }}">{{ message }}</span>
+      }
+    </div>
+  </section>
+</section>

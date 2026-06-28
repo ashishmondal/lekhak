@@ -1,0 +1,164 @@
+:host {
+  display: block;
+  height: 100dvh;
+  background: #faf9f7;
+  color: #1c1b19;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 46rem;
+  height: 100%;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 1.25rem;
+  box-sizing: border-box;
+}
+
+.bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #6b675f;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #2f7d4f;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.chip {
+  max-width: 18rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #f1e3c6;
+  color: #7a5a16;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.save {
+  font-variant-numeric: tabular-nums;
+}
+
+.save-saving {
+  color: #7a5a16;
+}
+
+.save-failed {
+  color: #8a2417;
+  font-weight: 600;
+}
+
+.settings-link {
+  color: #6b675f;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.settings-link:hover {
+  border-bottom-color: currentColor;
+}
+
+.banner {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  background: #fce8e6;
+  color: #8a2417;
+  font-size: 0.875rem;
+}
+
+.story {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  padding: 1rem 1.1rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.75rem;
+  background: #fff;
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: inherit;
+}
+
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ghost {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #a8a299;
+  font-style: italic;
+}
+
+.beat {
+  resize: none;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.6rem;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: inherit;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+button {
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 0.55rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.write {
+  background: #1c1b19;
+  color: #fff;
+}
+
+.stop {
+  background: #8a2417;
+  color: #fff;
+}
+
+.story:focus,
+.beat:focus {
+  outline: 2px solid #1c1b19;
+  outline-offset: 1px;
+}

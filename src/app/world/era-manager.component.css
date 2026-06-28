@@ -1,0 +1,109 @@
+.eras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #6b675f;
+}
+
+.error {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.5rem;
+  background: #fce8e6;
+  color: #8a2417;
+  font-size: 0.85rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.45rem;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: inherit;
+}
+
+.controls {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.controls button {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.45rem;
+  background: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.controls .danger {
+  color: #8a2417;
+  border-color: #f0cfc9;
+}
+
+.add {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add input {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.45rem;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: inherit;
+}
+
+.add button {
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: #1c1b19;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+input:focus {
+  outline: 2px solid #1c1b19;
+  outline-offset: 1px;
+}
