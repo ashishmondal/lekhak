@@ -246,6 +246,28 @@ button {
   color: inherit;
 }
 
+.era-select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #e3ded4;
+  border-radius: 0.5rem;
+  background: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+.era-bar {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b675f;
+}
+
+.era-name {
+  font-weight: 600;
+  color: #1c1b19;
+}
+
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;

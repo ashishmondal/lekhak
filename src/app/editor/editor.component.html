@@ -77,6 +77,20 @@
           [value]="newStoryTitle()"
           (input)="newStoryTitle.set($any($event.target).value)"
         />
+        <label class="lib-field">
+          <span class="sr-only">Era</span>
+          <select
+            class="era-select"
+            aria-label="Era"
+            title="Pick the era for this story. It can't change once the story starts."
+            [value]="newStoryEraId()"
+            (change)="newStoryEraId.set($any($event.target).value)"
+          >
+            @for (era of world.eras(); track era.id) {
+              <option [value]="era.id">{{ era.name }}</option>
+            }
+          </select>
+        </label>
         <button type="submit" class="lib-btn">Create</button>
         <button
           type="button"
@@ -85,11 +99,17 @@
         >Cancel</button>
       </form>
     } @else {
-      <button type="button" class="lib-btn" (click)="showNewStory.set(true)">
+      <button type="button" class="lib-btn" (click)="openNewStory()">
         + Story
       </button>
     }
   </nav>
+
+  @if (activeEraName(); as era) {
+    <p class="era-bar" aria-label="Story era">
+      Era: <span class="era-name">{{ era }}</span>
+    </p>
+  }
 
   @if (errorMessage(); as message) {
     <p class="banner" role="alert">{{ message }}</p>

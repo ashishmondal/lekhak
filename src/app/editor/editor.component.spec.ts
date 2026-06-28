@@ -12,6 +12,7 @@ import { GenerationService } from '../services/generation.service';
 import { Autosave } from '../services/autosave';
 import { SettingsService } from '../services/settings.service';
 import { StorageService } from '../services/storage.service';
+import { WorldStore } from '../world/world.store';
 import { EditorComponent } from './editor.component';
 
 let navigateSpy: ReturnType<typeof vi.fn>;
@@ -209,5 +210,22 @@ describe('EditorComponent', () => {
     expect(comp.storyText()).toBe('');
     expect(comp.showNewStory()).toBe(false);
     expect(comp.newStoryTitle()).toBe('');
+  });
+
+  it('anchors a new story to the chosen era and shows it while writing', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+
+    const world = TestBed.inject(WorldStore);
+    await world.addEra('Bronze Age');
+    const bronze = world.eras().find((e: any) => e.name === 'Bronze Age')!;
+
+    comp.openNewStory();
+    comp.newStoryTitle.set('Forged');
+    comp.newStoryEraId.set(bronze.id);
+    await comp.createStory();
+
+    expect(comp.stories.activeStory()?.eraId).toBe(bronze.id);
+    expect(comp.activeEraName()).toBe('Bronze Age');
   });
 });

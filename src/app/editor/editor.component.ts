@@ -64,8 +64,16 @@ export class EditorComponent implements OnInit {
   /** Whether the inline "new story" title form is open. */
   protected readonly showNewStory = signal(false);
   protected readonly newStoryTitle = signal('');
+  /** Era chosen for the story being created. Fixed once the story exists. */
+  protected readonly newStoryEraId = signal('');
   /** The per-story chapter cap, surfaced for the New chapter control. */
   protected readonly maxChapters = MAX_CHAPTERS;
+
+  /** Name of the active story's locked era, shown while writing. */
+  protected readonly activeEraName = computed(() => {
+    const eraId = this.stories.activeStory()?.eraId;
+    return this.world.eras().find((e) => e.id === eraId)?.name ?? '';
+  });
 
   protected readonly errorMessage = computed(() => {
     const err = this.gen.error();
@@ -169,6 +177,14 @@ export class EditorComponent implements OnInit {
     this.loadActiveBody();
   }
 
+  /** Open the new-story form, seeding the era with the current world era. */
+  protected openNewStory(): void {
+    this.newStoryEraId.set(
+      this.world.currentEraId() || this.world.eras()[0]?.id || '',
+    );
+    this.showNewStory.set(true);
+  }
+
   /** Create a new story from the inline title form and open its first chapter. */
   protected async createStory(): Promise<void> {
     if (this.gen.streaming()) {
@@ -178,7 +194,7 @@ export class EditorComponent implements OnInit {
     await this.stories.createStory(
       this.newStoryTitle(),
       this.world.world()?.id ?? '',
-      this.world.currentEraId(),
+      this.newStoryEraId() || this.world.currentEraId(),
     );
     this.newStoryTitle.set('');
     this.showNewStory.set(false);
