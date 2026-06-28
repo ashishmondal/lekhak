@@ -87,3 +87,64 @@ function matchScore(card: Card, q: string): number {
   }
   return 0;
 }
+
+/** One run of beat text: either plain prose or a recognized `@`-mention chip. */
+export interface MentionSegment {
+  /** The verbatim source slice (chips include the leading `@`). */
+  text: string;
+  /** True when this run is an `@`-mention of a known character. */
+  chip: boolean;
+}
+
+/**
+ * Split `text` into plain and chip runs for the beat-editor overlay. A chip is
+ * an `@` at the start of the text or right after whitespace, immediately
+ * followed by one of `labels` (a character's name or alias) and ending on a
+ * word boundary. Matching is case-insensitive; `labels` must be passed
+ * longest-first so multi-word names (e.g. "Anil Kapoor") win over a shorter
+ * prefix. The returned chip `text` keeps the literal characters (including the
+ * `@`) so the overlay stays glyph-aligned with the textarea underneath it.
+ */
+export function segmentMentions(
+  text: string,
+  labels: string[],
+): MentionSegment[] {
+  const segments: MentionSegment[] = [];
+  const lower = text.toLowerCase();
+  let plain = '';
+  let i = 0;
+
+  const flushPlain = (): void => {
+    if (plain) {
+      segments.push({ text: plain, chip: false });
+      plain = '';
+    }
+  };
+
+  while (i < text.length) {
+    const atBoundary = i === 0 || /\s/.test(text[i - 1]);
+    if (text[i] === '@' && atBoundary) {
+      const match = labels.find((label) => {
+        if (!lower.startsWith(label.toLowerCase(), i + 1)) {
+          return false;
+        }
+        const after = text[i + 1 + label.length];
+        // The match must end the string or stop on a non-word char so that
+        // "@An" never chips a label of "Annie", and vice versa.
+        return after === undefined || /[^\p{L}\p{N}]/u.test(after);
+      });
+      if (match) {
+        flushPlain();
+        segments.push({ text: text.slice(i, i + 1 + match.length), chip: true });
+        i += 1 + match.length;
+        continue;
+      }
+    }
+    plain += text[i];
+    i++;
+  }
+
+  flushPlain();
+  return segments;
+}
+

@@ -209,6 +209,61 @@
   color: var(--faint);
 }
 
+/* --- beat editor @-mention chips (beat box only, never the story box) ---
+   A backdrop div mirrors the textarea's text glyph-for-glyph so recognized
+   mentions can render as chips. The textarea sits on top with transparent
+   text + a visible caret, so editing stays native while chips show through. */
+.beat-wrap {
+  position: relative;
+  display: flex;
+}
+
+.beat-wrap > .beat {
+  flex: 1;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.beat-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  background: var(--surface);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Halo (box-shadow + radius) reads as a pill without adding layout width, so
+   the overlay stays perfectly aligned with the textarea's character advance. */
+.beat-chip {
+  border-radius: 0.3rem;
+  background: var(--accent-soft);
+  color: var(--chip-ink);
+  font-weight: 600;
+  box-shadow: 0 0 0 1.5px var(--accent-soft);
+}
+
+/* Reserve the trailing caret column so a mention at the very end still wraps
+   identically in the backdrop and the textarea. */
+.beat-caret-pad {
+  color: transparent;
+}
+
 .actions {
   display: flex;
   align-items: center;

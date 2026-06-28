@@ -21,7 +21,7 @@ import {
 } from '../ai/writing-style';
 import { resolveCard, type ContextInput } from '../context/context-builder';
 import type { Card } from '../models/domain';
-import { findActiveMention, rankCharacters } from './mention';
+import { findActiveMention, rankCharacters, segmentMentions } from './mention';
 import { GenerationService } from '../services/generation.service';
 import { CanonCheckService } from '../services/canon-check.service';
 import {
@@ -125,6 +125,38 @@ export class EditorComponent implements OnInit {
     isTurboStory(this.stories.activeStory()?.title),
   );
 
+  /**
+   * Era-resolved character names + aliases for the active story, longest-first
+   * so the beat overlay greedily chips multi-word names. Drives `beatSegments`.
+   */
+  private readonly characterLabels = computed(() => {
+    const eraId = this.stories.activeStory()?.eraId ?? '';
+    const labels = new Set<string>();
+    for (const card of this.world.cards()) {
+      const resolved = resolveCard(card, eraId);
+      if (resolved.type !== 'character') {
+        continue;
+      }
+      if (resolved.name.trim()) {
+        labels.add(resolved.name);
+      }
+      for (const alias of resolved.aliases ?? []) {
+        if (alias.trim()) {
+          labels.add(alias);
+        }
+      }
+    }
+    return [...labels].sort((a, b) => b.length - a.length);
+  });
+
+  /**
+   * The beat text split into plain runs and `@`-mention chips, rendered by the
+   * backdrop overlay so known characters read as chips in the beat editor only.
+   */
+  protected readonly beatSegments = computed(() =>
+    segmentMentions(this.nextBeat(), this.characterLabels()),
+  );
+
   /** Whether the inline `@`-mention character picker is open. */
   protected readonly mentionOpen = signal(false);
   /** Era-resolved character cards offered by the open mention picker. */
@@ -145,6 +177,9 @@ export class EditorComponent implements OnInit {
     viewChild<ElementRef<HTMLTextAreaElement>>('storyBox');
   private readonly beatBox =
     viewChild<ElementRef<HTMLTextAreaElement>>('beatBox');
+  /** Highlight overlay mirrored under the beat box, scroll-synced to it. */
+  private readonly beatBackdrop =
+    viewChild<ElementRef<HTMLDivElement>>('beatBackdrop');
 
   /** The chapter/story overflow menu, closed on outside-click and Escape. */
   private readonly moreMenu =
@@ -397,6 +432,7 @@ export class EditorComponent implements OnInit {
   protected onBeatInput(box: HTMLTextAreaElement): void {
     this.nextBeat.set(box.value);
     this.updateMention('beat', box);
+    this.syncBeatBackdrop(box);
   }
 
   protected onStoryScroll(box: HTMLTextAreaElement): void {
@@ -409,8 +445,18 @@ export class EditorComponent implements OnInit {
 
   /** Reposition the picker when the (short) beat box scrolls under the caret. */
   protected onBeatScroll(box: HTMLTextAreaElement): void {
+    this.syncBeatBackdrop(box);
     if (this.mentionOpen()) {
       this.positionMention(box);
+    }
+  }
+
+  /** Keep the chip overlay aligned with the beat textarea's scroll offset. */
+  private syncBeatBackdrop(box: HTMLTextAreaElement): void {
+    const backdrop = this.beatBackdrop()?.nativeElement;
+    if (backdrop) {
+      backdrop.scrollTop = box.scrollTop;
+      backdrop.scrollLeft = box.scrollLeft;
     }
   }
 
@@ -518,9 +564,12 @@ export class EditorComponent implements OnInit {
 
     const before = text.slice(0, this.mentionStart);
     const after = text.slice(caret);
+    // The beat box keeps the leading `@` so the mention renders as a chip in the
+    // overlay; the story box inserts the bare name to stay clean prose.
+    const inserted = field === 'beat' ? `@${card.name}` : card.name;
     const needsSpace = !after.startsWith(' ');
-    const next = `${before}${card.name}${needsSpace ? ' ' : ''}${after}`;
-    const caretPos = before.length + card.name.length + (needsSpace ? 1 : 0);
+    const next = `${before}${inserted}${needsSpace ? ' ' : ''}${after}`;
+    const caretPos = before.length + inserted.length + (needsSpace ? 1 : 0);
 
     target.set(next);
     if (field === 'story') {
@@ -535,6 +584,9 @@ export class EditorComponent implements OnInit {
       if (el) {
         el.focus();
         el.setSelectionRange(caretPos, caretPos);
+        if (field === 'beat') {
+          this.syncBeatBackdrop(el);
+        }
       }
     });
   }

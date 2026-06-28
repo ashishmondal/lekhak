@@ -299,18 +299,21 @@
     @if (lastBeat(); as beat) {
       <p class="ghost">Last: {{ beat }}</p>
     }
-    <textarea
-      #beatBox
-      class="beat"
-      aria-label="What happens next"
-      placeholder="What happens next? (Enter to write · @ to mention a character)"
-      rows="2"
-      [value]="nextBeat()"
-      (input)="onBeatInput(beatBox)"
-      (keydown)="onBeatKeydown($event)"
-      (scroll)="onBeatScroll(beatBox)"
-      (blur)="closeMention()"
-    ></textarea>
+    <div class="beat-wrap">
+      <div #beatBackdrop class="beat-backdrop" aria-hidden="true">@for (seg of beatSegments(); track $index) {@if (seg.chip) {<span class="beat-chip">{{ seg.text }}</span>} @else {<span>{{ seg.text }}</span>}}<span class="beat-caret-pad"> </span></div>
+      <textarea
+        #beatBox
+        class="beat"
+        aria-label="What happens next"
+        placeholder="What happens next? (Enter to write · @ to mention a character)"
+        rows="2"
+        [value]="nextBeat()"
+        (input)="onBeatInput(beatBox)"
+        (keydown)="onBeatKeydown($event)"
+        (scroll)="onBeatScroll(beatBox)"
+        (blur)="closeMention()"
+      ></textarea>
+    </div>
 
     <div class="actions">
       @if (gen.streaming()) {
