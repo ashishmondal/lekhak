@@ -71,6 +71,23 @@ describe('SettingsService', () => {
     expect(svc.provider()).toBe('openai');
   });
 
+  it('defaults the writing style to screenwriter and persists changes', () => {
+    const svc = new SettingsService();
+    expect(svc.style()).toBe('screenwriter');
+    expect(svc.systemPrompt()).toMatch(/^You are an award-winning screenwriter/);
+
+    svc.setStyle('cowriter');
+    expect(svc.style()).toBe('cowriter');
+    expect(localStorage.getItem('lekhak.style')).toBe('cowriter');
+    expect(svc.systemPrompt()).toMatch(/^You are a co-writer/);
+  });
+
+  it('ignores an unknown stored style', () => {
+    localStorage.setItem('lekhak.style', 'novelist');
+    const svc = new SettingsService();
+    expect(svc.style()).toBe('screenwriter');
+  });
+
   it('builds the provider matching the active selection', () => {
     const svc = new SettingsService();
     svc.setApiKey('sk-1');

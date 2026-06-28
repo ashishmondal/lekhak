@@ -64,6 +64,24 @@
 
   <hr class="rule" />
 
+  <section class="style">
+    <h2>Writing style</h2>
+    <label class="field">
+      <span>Style</span>
+      <select
+        [value]="settings.style()"
+        (change)="onStyleChange($any($event.target).value)"
+      >
+        @for (option of styles; track option.id) {
+          <option [value]="option.id">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+    <p class="note">{{ styleHint() }}</p>
+  </section>
+
+  <hr class="rule" />
+
   <section class="backup">
     <h2>Backup</h2>
     <p class="note">

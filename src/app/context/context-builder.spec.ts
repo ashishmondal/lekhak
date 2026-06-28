@@ -173,6 +173,16 @@ describe('ContextBuilder.build', () => {
     const result = builder.build({ story: story(), chapters, cards: [], tokenBudget: 110 });
     expect(result.trimmedNote).toContain('trimmed to fit');
   });
+
+  it('uses the style system prompt when one is supplied', () => {
+    const result = builder.build({
+      story: story(),
+      chapters: [chapter({ order: 0, body: 'A quiet morning.' })],
+      cards: [],
+      systemPrompt: 'CUSTOM STYLE PROMPT',
+    });
+    expect(result.messages[0].content).toContain('CUSTOM STYLE PROMPT');
+  });
 });
 
 describe('estimateTokens', () => {

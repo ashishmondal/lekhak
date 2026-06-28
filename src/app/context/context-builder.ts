@@ -2,6 +2,7 @@ import { Service } from '@angular/core';
 
 import type { Card, Chapter, Story } from '../models/domain';
 import type { ChatMessage } from '../ai/ai-provider';
+import { buildSystemPrompt } from '../ai/writing-style';
 
 /** Token estimate: ~4 chars per token is enough for v1 budgeting. */
 export function estimateTokens(text: string): number {
@@ -11,12 +12,8 @@ export function estimateTokens(text: string): number {
 /** Default prompt-context budget, in estimated tokens (leaves room for output). */
 export const DEFAULT_TOKEN_BUDGET = 8000;
 
-export const SYSTEM_PROMPT =
-  'You are a co-writer helping the author write a short story. The WORLD BIBLE below ' +
-  'is canon — never contradict it (names, traits, places, established facts). Match ' +
-  "the author's voice and tense. When asked to continue, write only the next passage; " +
-  'do not summarize or add commentary. When asked to rewrite, return only the ' +
-  'rewritten text.';
+/** Neutral fallback prompt when the caller passes no style override. */
+export const SYSTEM_PROMPT = buildSystemPrompt('cowriter');
 
 export interface ContextInput {
   story: Story;
@@ -33,6 +30,8 @@ export interface ContextInput {
   /** Cards the author pinned; always included regardless of relevance. */
   pinnedCardIds?: Iterable<string>;
   tokenBudget?: number;
+  /** Style-specific system prompt; falls back to {@link SYSTEM_PROMPT}. */
+  systemPrompt?: string;
 }
 
 export interface ContextResult {
@@ -194,8 +193,9 @@ export class ContextBuilder {
     const resolved = input.cards.map((card) => resolveCard(card, input.story.eraId));
     const usedCards = selectRelevant(resolved, recentText, input.pinnedCardIds);
 
+    const basePrompt = input.systemPrompt ?? SYSTEM_PROMPT;
     const bible = serializeCards(usedCards);
-    const systemContent = bible ? `${SYSTEM_PROMPT}\n\n${bible}` : SYSTEM_PROMPT;
+    const systemContent = bible ? `${basePrompt}\n\n${bible}` : basePrompt;
 
     const reservedTokens =
       estimateTokens(systemContent) +

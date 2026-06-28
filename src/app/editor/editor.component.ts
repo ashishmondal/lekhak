@@ -338,6 +338,7 @@ export class EditorComponent implements OnInit {
       cards: this.world.cards(),
       nextBeat: beat || undefined,
       recentText: `${body.slice(-RECENT_TAIL_CHARS)} ${beat}`,
+      systemPrompt: this.settings.systemPrompt(),
     };
 
     this.firstChunk = true;

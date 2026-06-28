@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AiError } from '../ai/ai-error';
+import { WRITING_STYLES } from '../ai/writing-style';
 import { BackupImportError, BackupService } from '../services/backup.service';
 import {
   PROVIDERS,
@@ -50,6 +51,19 @@ export class SettingsComponent {
   protected readonly keyPlaceholder = computed(
     () => KEY_PLACEHOLDERS[this.settings.provider()] ?? '',
   );
+
+  /** Writing-style options for the picker. */
+  protected readonly styles = WRITING_STYLES;
+  /** Hint shown under the style picker for the active style. */
+  protected readonly styleHint = computed(
+    () =>
+      WRITING_STYLES.find((s) => s.id === this.settings.style())?.description ??
+      '',
+  );
+
+  protected onStyleChange(value: string): void {
+    this.settings.setStyle(value);
+  }
 
   protected onProviderChange(value: string): void {
     this.settings.setProvider(value);

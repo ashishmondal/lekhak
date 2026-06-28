@@ -3,6 +3,12 @@ import { Service, computed, signal } from '@angular/core';
 import type { AiProvider } from '../ai/ai-provider';
 import { GeminiProvider } from '../ai/gemini-provider';
 import { OpenAiProvider } from '../ai/openai-provider';
+import {
+  DEFAULT_STYLE,
+  buildSystemPrompt,
+  isWritingStyleId,
+  type WritingStyleId,
+} from '../ai/writing-style';
 
 /** The text backends lekhak can talk to. */
 export const PROVIDERS = ['openai', 'gemini'] as const;
@@ -24,6 +30,7 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
 };
 
 const KEY_PROVIDER = 'lekhak.provider';
+const KEY_STYLE = 'lekhak.style';
 /** Pre-multi-provider keys, migrated into the OpenAI slot on first read. */
 const LEGACY_KEY_API = 'lekhak.apiKey';
 const LEGACY_KEY_MODEL = 'lekhak.model';
@@ -69,6 +76,11 @@ function readProvider(): ProviderId {
   return isProviderId(raw) ? raw : DEFAULT_PROVIDER;
 }
 
+function readStyle(): WritingStyleId {
+  const raw = read(KEY_STYLE, DEFAULT_STYLE);
+  return isWritingStyleId(raw) ? raw : DEFAULT_STYLE;
+}
+
 /**
  * One-time move of the single-provider `lekhak.apiKey` / `lekhak.model` keys
  * into the namespaced OpenAI slots, so upgrading users keep their credentials.
@@ -107,6 +119,17 @@ export class SettingsService {
   readonly hasKey = computed(() => this.apiKey().trim().length > 0);
   /** Default model for the active provider (used as the field placeholder). */
   readonly defaultModel = computed(() => DEFAULT_MODELS[this.provider()]);
+
+  /** The writing style steering generation; persisted across reloads. */
+  readonly style = signal<WritingStyleId>(readStyle());
+  /** System prompt for the active style; passed into the context builder. */
+  readonly systemPrompt = computed(() => buildSystemPrompt(this.style()));
+
+  setStyle(value: string): void {
+    const style = isWritingStyleId(value) ? value : DEFAULT_STYLE;
+    this.style.set(style);
+    write(KEY_STYLE, style);
+  }
 
   setApiKey(value: string): void {
     this.apiKey.set(value);
