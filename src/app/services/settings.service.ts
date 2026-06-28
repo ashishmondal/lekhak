@@ -5,7 +5,6 @@ import { GeminiProvider } from '../ai/gemini-provider';
 import { OpenAiProvider } from '../ai/openai-provider';
 import {
   DEFAULT_STYLE,
-  buildSystemPrompt,
   isWritingStyleId,
   type WritingStyleId,
 } from '../ai/writing-style';
@@ -120,10 +119,10 @@ export class SettingsService {
   /** Default model for the active provider (used as the field placeholder). */
   readonly defaultModel = computed(() => DEFAULT_MODELS[this.provider()]);
 
-  /** The writing style steering generation; persisted across reloads. */
+  /** The default writing style seeded into the new-story form. Each story
+   * locks its own style at creation, so changing this never alters an
+   * existing story. */
   readonly style = signal<WritingStyleId>(readStyle());
-  /** System prompt for the active style; passed into the context builder. */
-  readonly systemPrompt = computed(() => buildSystemPrompt(this.style()));
 
   setStyle(value: string): void {
     const style = isWritingStyleId(value) ? value : DEFAULT_STYLE;

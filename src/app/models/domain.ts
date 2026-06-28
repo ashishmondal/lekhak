@@ -3,6 +3,8 @@
  * (see StorageService). Cards belong to a WORLD, not a story.
  */
 
+import type { WritingStyleId } from '../ai/writing-style';
+
 export interface Era {
   id: string;
   name: string;
@@ -23,6 +25,12 @@ export interface Story {
   /** The single era this story (and all its chapters) is anchored to. */
   eraId: string;
   title: string;
+  /**
+   * Writing persona, chosen at creation and locked for the story's life.
+   * Optional only for pre-style records; resolve a missing value to the
+   * default style.
+   */
+  styleId?: WritingStyleId;
   updatedAt: number;
 }
 

@@ -85,6 +85,24 @@ describe('StoryStore', () => {
     expect(store.activeChapter()!.body).toBe('');
   });
 
+  it('createStory locks in the chosen writing style', async () => {
+    const { store } = setup();
+    await store.init(WORLD, ERA);
+
+    await store.createStory('A Tense Tale', WORLD, ERA, 'playwright');
+
+    expect(store.activeStory()!.styleId).toBe('playwright');
+  });
+
+  it('createStory defaults the style to the screenwriter persona', async () => {
+    const { store } = setup();
+    await store.init(WORLD, ERA);
+
+    await store.createStory('Default Style', WORLD, ERA);
+
+    expect(store.activeStory()!.styleId).toBe('screenwriter');
+  });
+
   it('createChapter appends at order max+1 and selects the new chapter', async () => {
     const { store } = setup();
     await store.init(WORLD, ERA);

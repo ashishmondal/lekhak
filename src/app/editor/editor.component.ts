@@ -11,6 +11,12 @@ import {
 import { Router, RouterLink } from '@angular/router';
 
 import type { AiErrorKind } from '../ai/ai-error';
+import {
+  DEFAULT_STYLE,
+  WRITING_STYLES,
+  buildSystemPrompt,
+  type WritingStyleId,
+} from '../ai/writing-style';
 import type { ContextInput } from '../context/context-builder';
 import { GenerationService } from '../services/generation.service';
 import { Autosave } from '../services/autosave';
@@ -67,6 +73,10 @@ export class EditorComponent implements OnInit {
   protected readonly newStoryTitle = signal('');
   /** Era chosen for the story being created. Fixed once the story exists. */
   protected readonly newStoryEraId = signal('');
+  /** Style chosen for the story being created. Locked once the story exists. */
+  protected readonly newStoryStyleId = signal<WritingStyleId>(DEFAULT_STYLE);
+  /** Writing styles offered in the new-story form. */
+  protected readonly styles = WRITING_STYLES;
   /** The per-story chapter cap, surfaced for the New chapter control. */
   protected readonly maxChapters = MAX_CHAPTERS;
 
@@ -74,6 +84,12 @@ export class EditorComponent implements OnInit {
   protected readonly activeEraName = computed(() => {
     const eraId = this.stories.activeStory()?.eraId;
     return this.world.eras().find((e) => e.id === eraId)?.name ?? '';
+  });
+
+  /** Label of the active story's locked writing style, shown while writing. */
+  protected readonly activeStyleLabel = computed(() => {
+    const styleId = this.stories.activeStory()?.styleId ?? DEFAULT_STYLE;
+    return WRITING_STYLES.find((s) => s.id === styleId)?.label ?? '';
   });
 
   protected readonly errorMessage = computed(() => {
@@ -217,6 +233,9 @@ export class EditorComponent implements OnInit {
     this.newStoryEraId.set(
       this.world.currentEraId() || this.world.eras()[0]?.id || '',
     );
+    // Seed the style with the settings default; the author can change it here,
+    // but it locks once the story is created.
+    this.newStoryStyleId.set(this.settings.style());
     this.showNewStory.set(true);
   }
 
@@ -230,6 +249,7 @@ export class EditorComponent implements OnInit {
       this.newStoryTitle(),
       this.world.world()?.id ?? '',
       this.newStoryEraId() || this.world.currentEraId(),
+      this.newStoryStyleId(),
     );
     this.newStoryTitle.set('');
     this.showNewStory.set(false);
@@ -338,7 +358,7 @@ export class EditorComponent implements OnInit {
       cards: this.world.cards(),
       nextBeat: beat || undefined,
       recentText: `${body.slice(-RECENT_TAIL_CHARS)} ${beat}`,
-      systemPrompt: this.settings.systemPrompt(),
+      systemPrompt: buildSystemPrompt(story.styleId ?? DEFAULT_STYLE),
     };
 
     this.firstChunk = true;

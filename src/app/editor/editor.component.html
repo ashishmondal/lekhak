@@ -92,6 +92,20 @@
             }
           </select>
         </label>
+        <label class="lib-field">
+          <span class="sr-only">Writing style</span>
+          <select
+            class="era-select"
+            aria-label="Writing style"
+            title="Pick the writing style for this story. It can't change once the story starts."
+            [value]="newStoryStyleId()"
+            (change)="newStoryStyleId.set($any($event.target).value)"
+          >
+            @for (style of styles; track style.id) {
+              <option [value]="style.id">{{ style.label }}</option>
+            }
+          </select>
+        </label>
         <button type="submit" class="lib-btn">Create</button>
         <button
           type="button"
@@ -149,6 +163,10 @@
   @if (activeEraName(); as era) {
     <p class="era-bar" aria-label="Story era">
       <span class="era-tag">Era</span> Set in <span class="era-name">{{ era }}</span>
+      @if (activeStyleLabel(); as style) {
+        <span class="era-tag style-tag">Style</span>
+        <span class="era-name">{{ style }}</span>
+      }
     </p>
   }
 

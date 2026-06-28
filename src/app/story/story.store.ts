@@ -1,5 +1,6 @@
 import { Service, computed, inject, signal } from '@angular/core';
 
+import { DEFAULT_STYLE, type WritingStyleId } from '../ai/writing-style';
 import type { Chapter, Story } from '../models/domain';
 import { MAX_CHAPTERS, StorageService } from '../services/storage.service';
 
@@ -133,6 +134,7 @@ export class StoryStore {
         worldId,
         eraId,
         title: 'Untitled',
+        styleId: DEFAULT_STYLE,
         updatedAt: Date.now(),
       };
       await this.storage.putStory(story);
@@ -196,12 +198,18 @@ export class StoryStore {
   // --- mutations ----------------------------------------------------------
 
   /** Create and select a new story (with an empty first chapter). */
-  async createStory(title: string, worldId: string, eraId: string): Promise<void> {
+  async createStory(
+    title: string,
+    worldId: string,
+    eraId: string,
+    styleId: WritingStyleId = DEFAULT_STYLE,
+  ): Promise<void> {
     const story: Story = {
       id: uuid(),
       worldId,
       eraId,
       title: title.trim() || 'Untitled',
+      styleId,
       updatedAt: Date.now(),
     };
     await this.storage.putStory(story);

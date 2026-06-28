@@ -67,7 +67,7 @@
   <section class="style">
     <h2>Writing style</h2>
     <label class="field">
-      <span>Style</span>
+      <span>Default for new stories</span>
       <select
         [value]="settings.style()"
         (change)="onStyleChange($any($event.target).value)"
@@ -77,7 +77,10 @@
         }
       </select>
     </label>
-    <p class="note">{{ styleHint() }}</p>
+    <p class="note">
+      {{ styleHint() }} Each story locks its style when you create it, so this
+      only sets the starting choice for the next one.
+    </p>
   </section>
 
   <hr class="rule" />
