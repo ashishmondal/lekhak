@@ -30,10 +30,12 @@
   font-size: 0.85rem;
   color: var(--muted);
   text-decoration: none;
+  border-bottom: 1px solid transparent;
 }
 
 .back:hover {
   color: var(--text);
+  border-bottom-color: currentColor;
 }
 
 h1 {
