@@ -1,6 +1,6 @@
 <section class="editor">
   <header class="bar">
-    <h1>lekhak</h1>
+    <h1>lekhak<span class="brand-dot">.</span></h1>
     <div class="status">
       @if (gen.streaming()) {
         <span class="dot" aria-hidden="true"></span>
@@ -148,7 +148,7 @@
 
   @if (activeEraName(); as era) {
     <p class="era-bar" aria-label="Story era">
-      Era: <span class="era-name">{{ era }}</span>
+      <span class="era-tag">Era</span> Set in <span class="era-name">{{ era }}</span>
     </p>
   }
 

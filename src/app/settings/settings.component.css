@@ -1,7 +1,7 @@
 :host {
   display: block;
   min-height: 100dvh;
-  background: var(--bg);
+  background: var(--bg-grad);
   color: var(--text);
   font-family: var(--font-ui);
 }

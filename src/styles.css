@@ -55,6 +55,10 @@
 
   --shadow-menu: 0 8px 24px rgba(28, 27, 25, 0.12);
 
+  --bg-grad: radial-gradient(120% 80% at 50% -10%, #fbf7ee 0%, var(--bg) 60%);
+  --sheet-shadow: 0 14px 30px -22px rgba(33, 27, 22, 0.5);
+  --accent-text-glow: none;
+
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body: 'Spectral', Georgia, 'Times New Roman', serif;
   --font-display: 'Fraunces', Georgia, serif;
@@ -106,6 +110,10 @@
 
   --shadow-menu: 0 12px 30px rgba(0, 0, 0, 0.6);
 
+  --bg-grad: radial-gradient(140% 90% at 50% -20%, #221a13 0%, var(--bg) 55%);
+  --sheet-shadow: 0 24px 48px -30px rgba(0, 0, 0, 0.8);
+  --accent-text-glow: 0 0 12px rgba(230, 169, 63, 0.6);
+
   /* Newsreader carries both display and body weight in the dark theme. */
   --font-body: 'Newsreader', Georgia, serif;
   --font-display: 'Newsreader', Georgia, serif;
@@ -117,7 +125,8 @@ body {
 }
 
 body {
-  background: var(--bg);
+  background: var(--bg-grad);
   color: var(--text);
   font-family: var(--font-ui);
+  min-height: 100dvh;
 }
