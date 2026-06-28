@@ -44,7 +44,7 @@ Variant A (Manuscript) typography is used in **both** themes:
 |---|---|
 | `--font-display` (wordmark, headings, Write button) | Fraunces |
 | `--font-body` (story prose) | Spectral |
-| `--font-ui` (nav, library, chrome) | Inter |
+| `--font-ui` (nav, library, chrome) | Spectral |
 
 Loaded via Google Fonts in [src/index.html](src/index.html). Story prose:
 `1.08rem / line-height 1.75`.

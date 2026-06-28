@@ -59,7 +59,8 @@
   --sheet-shadow: 0 14px 30px -22px rgba(33, 27, 22, 0.5);
   --accent-text-glow: none;
 
-  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Variant A uses Spectral for chrome and prose; Fraunces for display. */
+  --font-ui: 'Spectral', Georgia, 'Times New Roman', serif;
   --font-body: 'Spectral', Georgia, 'Times New Roman', serif;
   --font-display: 'Fraunces', Georgia, serif;
 }
