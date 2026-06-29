@@ -10,7 +10,8 @@ export type AiErrorKind =
   | 'network'
   | 'aborted'
   | 'overflow'
-  | 'unknown';
+  | 'unknown'
+  | 'content_prohibited';
 
 interface AiErrorOptions {
   retryable?: boolean;
@@ -25,6 +26,7 @@ const RETRYABLE_BY_KIND: Record<AiErrorKind, boolean> = {
   aborted: false,
   overflow: false,
   unknown: false,
+  content_prohibited: false,
 };
 
 export class AiError extends Error {
@@ -48,6 +50,9 @@ export class AiError extends Error {
     }
     if (status === 400 && /context[_ ]length|maximum context|too many tokens/i.test(body)) {
       return new AiError('overflow', 'The story is too long for this model. Trim and retry.');
+    }
+    if (status === 403 && /content[_ ]prohibited/i.test(body)) {
+      return new AiError('content_prohibited', 'The request was blocked by safety filters.');
     }
     if (status >= 500) {
       return new AiError('unknown', `Provider error (${status}). Retry shortly.`, {

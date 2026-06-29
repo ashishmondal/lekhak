@@ -30,9 +30,9 @@ interface GeminiContent {
  *
  * Wire format differs from OpenAI in three ways the interface hides from the
  * rest of the app:
- *  - the system prompt rides a dedicated `systemInstruction` field, not a turn;
- *  - turn roles are `user` / `model` (no `assistant`, no `system`);
- *  - streamed text lives at `candidates[0].content.parts[0].text`.
+ * - the system prompt rides a dedicated `systemInstruction` field, not a turn;
+ * - turn roles are `user` / `model` (no `assistant`, no `system`);
+ * - streamed text lives at `candidates[0].content.parts[0].text`.
  *
  * Streaming uses `:streamGenerateContent?alt=sse`, which emits the same
  * `\n\n`-delimited SSE frames {@link parseSseFrames} already reads. Gemini ends
@@ -164,10 +164,39 @@ export function toGeminiRequest(messages: ChatMessage[]): {
 function extractDelta(data: string): string | undefined {
   try {
     const parsed = JSON.parse(data) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      candidates?: { 
+        content?: { parts?: { text?: string }[] };
+        finishReason?: string;
+      }[];
+      promptFeedback?: {
+        blockReason?: string;
+      };
     };
-    return parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-  } catch {
-    return undefined; // non-JSON keep-alive or partial; skip
+
+    // 1. Check if the prompt itself was blocked before generation started
+    if (parsed.promptFeedback?.blockReason) {
+      throw new AiError(
+        'content_prohibited', 
+        ` request was blocked by safety filters: ${parsed.promptFeedback.blockReason}`
+      );
+    }
+
+    const candidate = parsed.candidates?.[0];
+
+    // 2. Check if streaming was cut short mid-way due to safety or prohibited content
+    if (candidate?.finishReason === 'SAFETY') {
+      throw new AiError(
+        'content_prohibited', 
+        'Generation stopped because the generated content violated safety policies.'
+      );
+    }
+
+    return candidate?.content?.parts?.[0]?.text;
+  } catch (err) {
+    // If we intentionally threw an AiError above, pass it through
+    if (err instanceof AiError) {
+      throw err;
+    }
+    return undefined; // non-JSON keep-alive or partial; skip safely
   }
 }

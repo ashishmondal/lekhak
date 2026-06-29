@@ -43,6 +43,7 @@ const ERROR_COPY: Record<AiErrorKind, string> = {
   overflow: 'That passage was too long to send. Trim the story and retry.',
   aborted: '',
   unknown: 'Something went wrong. Try again.',
+  content_prohibited: 'The request was blocked by safety filters. Try rewording it.',
 };
 
 /** Treat the story box as "at bottom" within this many pixels. */
