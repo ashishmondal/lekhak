@@ -110,3 +110,22 @@ someone picking it up months later understands the motivation and where to start
   this era yet", and (4) a short inline example for character cards.
 - **Depends on / blocked by:** Reuses existing `WorldStore.setOverlay` model;
   no schema migration required.
+
+## TD6 — Make OpenAI provider usable from browser-only deployment
+
+- **What:** Add a supported transport for OpenAI generation that works in
+  browser deployments (e.g., first-party proxy endpoint), or set a safer default
+  provider for out-of-the-box writing.
+- **Why:** QA found that direct browser calls to OpenAI chat completions are
+  blocked by CORS in this deployment mode, so writing can fail even with a valid
+  key.
+- **Pros:** Restores real OpenAI writing functionality; reduces user confusion
+  and support burden around "failed to fetch"/CORS behavior.
+- **Cons:** Requires backend/proxy work and key-handling policy decisions; higher
+  implementation and security review cost than a client-only fix.
+- **Context:** `/qa` on 2026-06-30 reproduced CORS failures on Write next while
+  using OpenAI from `http://localhost:4200`. A UX mitigation is now shipped
+  (clear banner guidance), but the functional limitation remains until transport
+  architecture changes.
+- **Depends on / blocked by:** Decision on proxy architecture and secret
+  management for OpenAI traffic.
