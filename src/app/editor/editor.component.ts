@@ -14,10 +14,9 @@ import type { AiErrorKind } from '../ai/ai-error';
 import { isTurboStory } from '../ai/ai-provider';
 import {
   DEFAULT_STYLE,
-  WRITING_STYLES,
   buildSystemPrompt,
-  isWritingStyleId,
-  type WritingStyleId,
+  mergeWritingStyles,
+  resolveWritingStyle,
 } from '../ai/writing-style';
 import { resolveCard, type ContextInput } from '../context/context-builder';
 import type { Card } from '../models/domain';
@@ -84,9 +83,11 @@ export class EditorComponent implements OnInit {
   /** Era chosen for the story being created. Fixed once the story exists. */
   protected readonly newStoryEraId = signal('');
   /** Style chosen for the story being created. Locked once the story exists. */
-  protected readonly newStoryStyleId = signal<WritingStyleId>(DEFAULT_STYLE);
+  protected readonly newStoryStyleId = signal<string>(DEFAULT_STYLE);
   /** Writing styles offered in the new-story form. */
-  protected readonly styles = WRITING_STYLES;
+  protected readonly styles = computed(() =>
+    mergeWritingStyles(this.settings.customStyles()),
+  );
   /** The per-story chapter cap, surfaced for the New chapter control. */
   protected readonly maxChapters = MAX_CHAPTERS;
 
@@ -98,10 +99,8 @@ export class EditorComponent implements OnInit {
 
   /** Label of the active story's locked writing style, shown while writing. */
   protected readonly activeStyleLabel = computed(() => {
-    const raw = this.stories.activeStory()?.styleId;
-    // Legacy stories may carry a retired id; resolve those to the default.
-    const styleId = raw && isWritingStyleId(raw) ? raw : DEFAULT_STYLE;
-    return WRITING_STYLES.find((s) => s.id === styleId)?.label ?? '';
+    const styleId = this.stories.activeStory()?.styleId ?? DEFAULT_STYLE;
+    return resolveWritingStyle(styleId, this.settings.customStyles()).label;
   });
 
   protected readonly errorMessage = computed(() => {
@@ -654,7 +653,10 @@ export class EditorComponent implements OnInit {
       cards: this.world.cards(),
       nextBeat: beat || undefined,
       synopsis: story.synopsis,
-      systemPrompt: buildSystemPrompt(story.styleId ?? DEFAULT_STYLE),
+      systemPrompt: buildSystemPrompt(
+        story.styleId ?? DEFAULT_STYLE,
+        this.settings.customStyles(),
+      ),
     };
 
     this.firstChunk = true;

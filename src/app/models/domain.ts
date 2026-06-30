@@ -3,8 +3,6 @@
  * (see StorageService). Cards belong to a WORLD, not a story.
  */
 
-import type { WritingStyleId } from '../ai/writing-style';
-
 export interface Era {
   id: string;
   name: string;
@@ -36,7 +34,7 @@ export interface Story {
    * Optional only for pre-style records; resolve a missing value to the
    * default style.
    */
-  styleId?: WritingStyleId;
+  styleId?: string;
   /**
    * Rolling summary of chapters that have been trimmed out of the live budget,
    * computed lazily in the background (see SynopsisService). Optional: absent

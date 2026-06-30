@@ -4,9 +4,10 @@ import type { AiProvider } from '../ai/ai-provider';
 import { GeminiProvider } from '../ai/gemini-provider';
 import { OpenAiProvider } from '../ai/openai-provider';
 import {
+  type CustomWritingStyle,
   DEFAULT_STYLE,
+  hasWritingStyle,
   isWritingStyleId,
-  type WritingStyleId,
 } from '../ai/writing-style';
 
 /** The text backends lekhak can talk to. */
@@ -30,6 +31,7 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
 
 const KEY_PROVIDER = 'lekhak.provider';
 const KEY_STYLE = 'lekhak.style';
+const KEY_CUSTOM_STYLES = 'lekhak.customStyles';
 /** Opt-in consistency surfaces, all OFF by default (each costs BYOK tokens). */
 const KEY_DRIFT = 'lekhak.consistency.drift';
 const KEY_EXTRACTION = 'lekhak.consistency.extraction';
@@ -84,9 +86,59 @@ function readProvider(): ProviderId {
   return isProviderId(raw) ? raw : DEFAULT_PROVIDER;
 }
 
-function readStyle(): WritingStyleId {
-  const raw = read(KEY_STYLE, DEFAULT_STYLE);
-  return isWritingStyleId(raw) ? raw : DEFAULT_STYLE;
+function readStyle(): string {
+  return read(KEY_STYLE, DEFAULT_STYLE);
+}
+
+function readCustomStyles(): CustomWritingStyle[] {
+  const raw = read(KEY_CUSTOM_STYLES, '[]');
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed
+      .map((item) => sanitizeCustomStyle(item))
+      .filter((item): item is CustomWritingStyle => !!item);
+  } catch {
+    return [];
+  }
+}
+
+function writeCustomStyles(styles: readonly CustomWritingStyle[]): void {
+  write(KEY_CUSTOM_STYLES, JSON.stringify(styles));
+}
+
+function sanitizeCustomStyle(value: unknown): CustomWritingStyle | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const item = value as Partial<CustomWritingStyle>;
+  const id = typeof item.id === 'string' ? item.id.trim() : '';
+  const label = typeof item.label === 'string' ? item.label.trim() : '';
+  const description =
+    typeof item.description === 'string' ? item.description.trim() : '';
+  const persona = typeof item.persona === 'string' ? item.persona.trim() : '';
+  if (!id || !label || !persona) {
+    return null;
+  }
+  const now = Date.now();
+  const createdAt =
+    typeof item.createdAt === 'number' && Number.isFinite(item.createdAt)
+      ? item.createdAt
+      : now;
+  const updatedAt =
+    typeof item.updatedAt === 'number' && Number.isFinite(item.updatedAt)
+      ? item.updatedAt
+      : createdAt;
+  return { id, label, description, persona, createdAt, updatedAt };
+}
+
+function customStyleId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `custom-${crypto.randomUUID()}`;
+  }
+  return `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /**
@@ -131,7 +183,9 @@ export class SettingsService {
   /** The default writing style seeded into the new-story form. Each story
    * locks its own style at creation, so changing this never alters an
    * existing story. */
-  readonly style = signal<WritingStyleId>(readStyle());
+  readonly customStyles = signal<CustomWritingStyle[]>(readCustomStyles());
+
+  readonly style = signal<string>(this.readInitialStyle());
 
   /**
    * Opt-in consistency surfaces. All default OFF: each spends extra BYOK tokens
@@ -160,9 +214,94 @@ export class SettingsService {
   }
 
   setStyle(value: string): void {
-    const style = isWritingStyleId(value) ? value : DEFAULT_STYLE;
+    const style = hasWritingStyle(value, this.customStyles())
+      ? value
+      : DEFAULT_STYLE;
     this.style.set(style);
     write(KEY_STYLE, style);
+  }
+
+  addCustomStyle(input: {
+    label: string;
+    description: string;
+    persona: string;
+  }): string | null {
+    const label = input.label.trim();
+    const description = input.description.trim();
+    const persona = input.persona.trim();
+    if (!label || !persona) {
+      return null;
+    }
+    const now = Date.now();
+    const id = customStyleId();
+    const next: CustomWritingStyle = {
+      id,
+      label,
+      description,
+      persona,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.customStyles.update((styles) => {
+      const merged = [...styles, next];
+      writeCustomStyles(merged);
+      return merged;
+    });
+    return id;
+  }
+
+  updateCustomStyle(
+    id: string,
+    input: { label: string; description: string; persona: string },
+  ): boolean {
+    const label = input.label.trim();
+    const description = input.description.trim();
+    const persona = input.persona.trim();
+    if (!label || !persona) {
+      return false;
+    }
+    let changed = false;
+    this.customStyles.update((styles) => {
+      const next = styles.map((style) => {
+        if (style.id !== id) {
+          return style;
+        }
+        changed = true;
+        return {
+          ...style,
+          label,
+          description,
+          persona,
+          updatedAt: Date.now(),
+        };
+      });
+      if (changed) {
+        writeCustomStyles(next);
+      }
+      return next;
+    });
+    return changed;
+  }
+
+  deleteCustomStyle(id: string): void {
+    this.customStyles.update((styles) => {
+      const next = styles.filter((style) => style.id !== id);
+      if (next.length !== styles.length) {
+        writeCustomStyles(next);
+      }
+      return next;
+    });
+    if (this.style() === id) {
+      this.setStyle(DEFAULT_STYLE);
+    }
+  }
+
+  private readInitialStyle(): string {
+    const raw = readStyle();
+    if (isWritingStyleId(raw)) {
+      return raw;
+    }
+    return hasWritingStyle(raw, this.customStyles()) ? raw : DEFAULT_STYLE;
   }
 
   setApiKey(value: string): void {

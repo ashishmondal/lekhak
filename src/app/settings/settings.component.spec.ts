@@ -69,4 +69,18 @@ describe('SettingsComponent', () => {
     expect(comp.testState()).toBe('failed');
     expect(comp.testMessage()).toContain('Could not reach');
   });
+
+  it('adds a custom persona from the settings form handlers', () => {
+    const fixture = render();
+    const comp = fixture.componentInstance as any;
+    const settings = TestBed.inject(SettingsService);
+
+    comp.personaLabel.set('Custom Muse');
+    comp.personaDescription.set('Friendly and vivid.');
+    comp.personaPrompt.set('You are a writer focused on playful banter.');
+    comp.savePersona();
+
+    expect(settings.customStyles().length).toBe(1);
+    expect(settings.customStyles()[0].label).toBe('Custom Muse');
+  });
 });

@@ -70,7 +70,7 @@
         [value]="settings.style()"
         (change)="onStyleChange($any($event.target).value)"
       >
-        @for (option of styles; track option.id) {
+        @for (option of styles(); track option.id) {
           <option [value]="option.id">{{ option.label }}</option>
         }
       </select>
@@ -79,6 +79,99 @@
       {{ styleHint() }} Each story locks its style when you create it, so this
       only sets the starting choice for the next one.
     </p>
+
+    <h3 class="subhead">Custom personas</h3>
+    <p class="note compact-note">
+      Build your own voice presets, then apply one as the default for new stories.
+    </p>
+    @if (settings.customStyles().length > 0) {
+      <div class="persona-list">
+        @for (persona of settings.customStyles(); track persona.id) {
+          <article class="persona-card">
+            <div class="persona-copy">
+              <div class="persona-meta">
+                <p class="persona-name">{{ persona.label }}</p>
+                @if (settings.style() === persona.id) {
+                  <span class="persona-badge">Default</span>
+                }
+              </div>
+              @if (persona.description) {
+                <p class="persona-desc">{{ persona.description }}</p>
+              } @else {
+                <p class="persona-desc muted">No one-line hint yet.</p>
+              }
+            </div>
+            <div class="persona-actions">
+              <button
+                type="button"
+                class="test compact"
+                (click)="onStyleChange(persona.id)"
+              >Apply</button>
+              <button
+                type="button"
+                class="test compact"
+                (click)="beginPersonaEdit(persona.id)"
+              >Edit</button>
+              <button
+                type="button"
+                class="test compact danger-btn"
+                (click)="removePersona(persona.id)"
+              >Remove</button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="note">No custom personas yet.</p>
+    }
+
+    <div class="persona-form-grid">
+      <label class="field">
+        <span>Name</span>
+        <input
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="personaLabel()"
+          (input)="personaLabel.set($any($event.target).value)"
+        />
+      </label>
+
+      <label class="field">
+        <span>One-line hint</span>
+        <input
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="personaDescription()"
+          (input)="personaDescription.set($any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Persona prompt</span>
+      <textarea
+        rows="5"
+        spellcheck="false"
+        [value]="personaPrompt()"
+        (input)="personaPrompt.set($any($event.target).value)"
+      ></textarea>
+    </label>
+
+    <div class="actions persona-form-actions">
+      <button type="button" class="test" (click)="savePersona()">
+        {{ editingPersonaId() ? 'Update persona' : 'Add persona' }}
+      </button>
+      @if (editingPersonaId()) {
+        <button type="button" class="test ghost-btn" (click)="cancelPersonaEdit()">
+          Cancel edit
+        </button>
+      }
+      @if (personaError(); as message) {
+        <span class="result result-failed">{{ message }}</span>
+      }
+    </div>
   </section>
 
   <hr class="rule" />

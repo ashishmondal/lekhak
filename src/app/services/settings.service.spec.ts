@@ -86,6 +86,53 @@ describe('SettingsService', () => {
     expect(svc.style()).toBe('banter');
   });
 
+  it('accepts a stored custom style id when that persona exists', () => {
+    localStorage.setItem('lekhak.style', 'custom-1');
+    localStorage.setItem(
+      'lekhak.customStyles',
+      JSON.stringify([
+        {
+          id: 'custom-1',
+          label: 'Scene Partner',
+          description: 'Focused on dialogue chemistry.',
+          persona: 'You are a fiction writer with dialogue-first scenes.',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ]),
+    );
+    const svc = new SettingsService();
+    expect(svc.style()).toBe('custom-1');
+  });
+
+  it('adds, updates, and deletes a custom persona', () => {
+    const svc = new SettingsService();
+    const id = svc.addCustomStyle({
+      label: 'Scene Partner',
+      description: 'Focused on dialogue chemistry.',
+      persona: 'You are a fiction writer with dialogue-first scenes.',
+    });
+
+    expect(id).toBeTruthy();
+    expect(svc.customStyles()).toHaveLength(1);
+    expect(localStorage.getItem('lekhak.customStyles')).toContain('Scene Partner');
+
+    const updated = svc.updateCustomStyle(id!, {
+      label: 'Scene Partner v2',
+      description: 'Updated hint',
+      persona: 'Updated persona body',
+    });
+    expect(updated).toBe(true);
+    expect(svc.customStyles()[0].label).toBe('Scene Partner v2');
+
+    svc.setStyle(id!);
+    expect(svc.style()).toBe(id);
+    svc.deleteCustomStyle(id!);
+
+    expect(svc.customStyles()).toHaveLength(0);
+    expect(svc.style()).toBe('banter');
+  });
+
   it('defaults every consistency surface OFF', () => {
     const svc = new SettingsService();
     expect(svc.driftCheck()).toBe(false);

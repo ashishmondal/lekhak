@@ -1,6 +1,6 @@
 import { Service, computed, inject, signal } from '@angular/core';
 
-import { DEFAULT_STYLE, type WritingStyleId } from '../ai/writing-style';
+import { DEFAULT_STYLE } from '../ai/writing-style';
 import type { Chapter, Story } from '../models/domain';
 import { MAX_CHAPTERS, StorageService } from '../services/storage.service';
 
@@ -202,7 +202,7 @@ export class StoryStore {
     title: string,
     worldId: string,
     eraId: string,
-    styleId: WritingStyleId = DEFAULT_STYLE,
+    styleId: string = DEFAULT_STYLE,
   ): Promise<void> {
     const story: Story = {
       id: uuid(),

@@ -7,6 +7,7 @@ import {
   WRITING_STYLES,
   buildSystemPrompt,
   isWritingStyleId,
+  type CustomWritingStyle,
 } from './writing-style';
 
 describe('writing-style', () => {
@@ -45,8 +46,20 @@ describe('writing-style', () => {
   });
 
   it('falls back to the default style for an unknown id', () => {
-    // @ts-expect-error exercising the runtime guard with a bad id
     expect(buildSystemPrompt('limerick')).toBe(buildSystemPrompt(DEFAULT_STYLE));
+  });
+
+  it('builds a prompt from a custom persona id when provided', () => {
+    const custom: CustomWritingStyle = {
+      id: 'custom-noir',
+      label: 'Noir Detective',
+      description: 'Hard-boiled voice and tension.',
+      persona: 'You are a noir fiction writer with clipped atmospheric prose.',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    expect(buildSystemPrompt(custom.id, [custom])).toContain(custom.persona);
+    expect(buildSystemPrompt(custom.id, [custom])).toContain(MECHANICS);
   });
 
   it('guards style ids', () => {

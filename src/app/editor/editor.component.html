@@ -201,7 +201,7 @@
             [value]="newStoryStyleId()"
             (change)="newStoryStyleId.set($any($event.target).value)"
           >
-            @for (style of styles; track style.id) {
+            @for (style of styles(); track style.id) {
               <option [value]="style.id">{{ style.label }}</option>
             }
           </select>

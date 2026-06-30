@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AiError } from '../ai/ai-error';
-import { WRITING_STYLES } from '../ai/writing-style';
+import { mergeWritingStyles, resolveWritingStyle } from '../ai/writing-style';
 import { BackupImportError, BackupService } from '../services/backup.service';
 import {
   PROVIDERS,
@@ -53,16 +53,84 @@ export class SettingsComponent {
   );
 
   /** Writing-style options for the picker. */
-  protected readonly styles = WRITING_STYLES;
+  protected readonly styles = computed(() =>
+    mergeWritingStyles(this.settings.customStyles()),
+  );
   /** Hint shown under the style picker for the active style. */
   protected readonly styleHint = computed(
     () =>
-      WRITING_STYLES.find((s) => s.id === this.settings.style())?.description ??
-      '',
+      resolveWritingStyle(
+        this.settings.style(),
+        this.settings.customStyles(),
+      ).description,
   );
+
+  protected readonly editingPersonaId = signal<string | null>(null);
+  protected readonly personaLabel = signal('');
+  protected readonly personaDescription = signal('');
+  protected readonly personaPrompt = signal('');
+  protected readonly personaError = signal('');
 
   protected onStyleChange(value: string): void {
     this.settings.setStyle(value);
+  }
+
+  protected beginPersonaEdit(id: string): void {
+    const found = this.settings.customStyles().find((style) => style.id === id);
+    if (!found) {
+      return;
+    }
+    this.editingPersonaId.set(id);
+    this.personaLabel.set(found.label);
+    this.personaDescription.set(found.description);
+    this.personaPrompt.set(found.persona);
+    this.personaError.set('');
+  }
+
+  protected removePersona(id: string): void {
+    this.settings.deleteCustomStyle(id);
+    if (this.editingPersonaId() === id) {
+      this.resetPersonaForm();
+    }
+  }
+
+  protected savePersona(): void {
+    const label = this.personaLabel().trim();
+    const persona = this.personaPrompt().trim();
+    if (!label || !persona) {
+      this.personaError.set('Name and persona prompt are required.');
+      return;
+    }
+
+    const description = this.personaDescription().trim();
+    const editingId = this.editingPersonaId();
+    if (editingId) {
+      const ok = this.settings.updateCustomStyle(editingId, {
+        label,
+        description,
+        persona,
+      });
+      if (!ok) {
+        this.personaError.set('Could not update this persona.');
+        return;
+      }
+    } else {
+      const created = this.settings.addCustomStyle({
+        label,
+        description,
+        persona,
+      });
+      if (!created) {
+        this.personaError.set('Could not add this persona.');
+        return;
+      }
+      this.settings.setStyle(created);
+    }
+    this.resetPersonaForm();
+  }
+
+  protected cancelPersonaEdit(): void {
+    this.resetPersonaForm();
   }
 
   protected onProviderChange(value: string): void {
@@ -169,5 +237,13 @@ export class SettingsComponent {
   /** Seam for tests: reload after a successful import. */
   protected reload(): void {
     location.reload();
+  }
+
+  private resetPersonaForm(): void {
+    this.editingPersonaId.set(null);
+    this.personaLabel.set('');
+    this.personaDescription.set('');
+    this.personaPrompt.set('');
+    this.personaError.set('');
   }
 }

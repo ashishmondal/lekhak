@@ -27,15 +27,24 @@ export const RULES =
   'teases or opens up, the other answers with an equally fluid, in-character ' +
   'reply.';
 
-export type WritingStyleId = 'banter' | 'romance' | 'repartee' | 'heartfelt';
+export type BuiltInWritingStyleId =
+  | 'banter'
+  | 'romance'
+  | 'repartee'
+  | 'heartfelt';
 
-interface WritingStyle {
-  readonly id: WritingStyleId;
+export interface WritingStyle {
+  readonly id: string;
   readonly label: string;
   /** One-line hint shown under the picker. */
   readonly description: string;
   /** The role sentence placed before the shared mechanics. */
   readonly persona: string;
+}
+
+export interface CustomWritingStyle extends WritingStyle {
+  readonly createdAt: number;
+  readonly updatedAt: number;
 }
 
 export const WRITING_STYLES: readonly WritingStyle[] = [
@@ -102,16 +111,44 @@ export const WRITING_STYLES: readonly WritingStyle[] = [
 ];
 
 /** The style selected before the author has chosen one. */
-export const DEFAULT_STYLE: WritingStyleId = 'banter';
+export const DEFAULT_STYLE: BuiltInWritingStyleId = 'banter';
 
 const BY_ID = new Map(WRITING_STYLES.map((style) => [style.id, style]));
 
-export function isWritingStyleId(value: string): value is WritingStyleId {
-  return BY_ID.has(value as WritingStyleId);
+export function isWritingStyleId(value: string): value is BuiltInWritingStyleId {
+  return BY_ID.has(value as BuiltInWritingStyleId);
+}
+
+function asMap(customStyles: readonly WritingStyle[]): Map<string, WritingStyle> {
+  return new Map(customStyles.map((style) => [style.id, style]));
+}
+
+export function mergeWritingStyles(
+  customStyles: readonly WritingStyle[] = [],
+): readonly WritingStyle[] {
+  return [...WRITING_STYLES, ...customStyles];
+}
+
+export function hasWritingStyle(
+  id: string,
+  customStyles: readonly WritingStyle[] = [],
+): boolean {
+  return BY_ID.has(id) || asMap(customStyles).has(id);
+}
+
+export function resolveWritingStyle(
+  id: string,
+  customStyles: readonly WritingStyle[] = [],
+): WritingStyle {
+  const customById = asMap(customStyles);
+  return customById.get(id) ?? BY_ID.get(id) ?? BY_ID.get(DEFAULT_STYLE)!;
 }
 
 /** Compose the full system prompt for a style: persona, mechanics, rules. */
-export function buildSystemPrompt(id: WritingStyleId): string {
-  const style = BY_ID.get(id) ?? BY_ID.get(DEFAULT_STYLE)!;
+export function buildSystemPrompt(
+  id: string,
+  customStyles: readonly WritingStyle[] = [],
+): string {
+  const style = resolveWritingStyle(id, customStyles);
   return `${style.persona} ${MECHANICS}\n\n${RULES}`;
 }
