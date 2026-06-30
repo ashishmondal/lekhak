@@ -49,6 +49,22 @@ describe('WorldPanelComponent', () => {
     );
   });
 
+  it('prevents adding a duplicate character name (case-insensitive)', async () => {
+    const { fixture, store } = await render();
+    const comp = fixture.componentInstance as any;
+
+    await store.addCard({ type: 'character', name: 'Mira', notes: 'A scholar.' });
+
+    comp.newType.set('character');
+    comp.newName.set('  mira  ');
+    comp.newNotes.set('Another description');
+    await comp.addCard();
+    fixture.detectChanges();
+
+    expect(store.cards().filter((card) => card.type === 'character')).toHaveLength(1);
+    expect(comp.addError()).toContain('already exists');
+  });
+
   it('deletes immediately when a card is not in the prose', async () => {
     const { fixture, store } = await render();
     const comp = fixture.componentInstance as any;

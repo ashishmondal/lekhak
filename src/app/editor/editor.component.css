@@ -17,6 +17,12 @@
   box-sizing: border-box;
 }
 
+.editor.focus-writing {
+  max-width: none;
+  padding: 0.5rem 0.6rem 0.6rem;
+  gap: 0.55rem;
+}
+
 .bar {
   display: flex;
   align-items: baseline;
@@ -241,6 +247,39 @@
   display: flex;
 }
 
+.beat-wrap.in-flight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 0.6rem;
+  background: linear-gradient(
+    110deg,
+    var(--line) 0%,
+    var(--line) 30%,
+    var(--accent) 50%,
+    var(--line) 70%,
+    var(--line) 100%
+  );
+  background-size: 240% 100%;
+  animation: beat-shimmer 1.2s linear infinite;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+@keyframes beat-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
 .beat-wrap > .beat {
   flex: 1;
   width: 100%;
@@ -294,6 +333,10 @@
   gap: 0.6rem;
 }
 
+.focus-toggle {
+  margin-left: 0.1rem;
+}
+
 .hint {
   margin-right: auto;
   font-size: 0.74rem;
@@ -325,6 +368,18 @@ button {
 .beat:focus {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
+}
+
+.editor.focus-writing .story-wrap {
+  flex: 1;
+}
+
+.editor.focus-writing .next {
+  gap: 0.45rem;
+}
+
+.editor.focus-writing .beat {
+  min-height: 6rem;
 }
 
 /* --- library nav (story select + chapter pager + create controls) --- */

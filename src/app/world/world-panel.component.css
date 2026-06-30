@@ -86,6 +86,15 @@ h2 {
   font-style: italic;
 }
 
+.add-error {
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.45rem;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+
 select,
 input,
 textarea {

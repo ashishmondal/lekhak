@@ -85,3 +85,28 @@ someone picking it up months later understands the motivation and where to start
   rather than invent new components — but the assembled advisory pattern is worth
   naming. Could alternatively be folded into the T9 PR's definition-of-done.
 - **Depends on / blocked by:** T9 (Slice 2 UI) landing.
+
+## TD5 — Make card-to-era linkage explicit on the World screen
+
+- **What:** Redesign the World screen card area so users can see, at a glance,
+  what changes by era and what remains base canon. Replace the hidden
+  "Overlay for this era" mental model with explicit base-vs-era structure,
+  visible era context on each card, and clearer character examples.
+- **Why:** Current behavior is technically correct but discoverability is low.
+  Users can create eras and cards yet still fail to understand how a character's
+  state differs by era, which weakens trust in canon editing.
+- **Pros:** Reduces confusion on first use, improves confidence that edits are
+  anchored to the selected era, and lowers accidental edits to the wrong layer
+  (base card vs era-specific override).
+- **Cons:** Requires coordinated UI copy, layout, and interaction changes across
+  World panel and tests; slightly denser card UI once base and era rows are both
+  visible.
+- **Context:** The World screen currently shows one global "Overlay era" selector,
+  and each card hides era edits behind a collapsed `<details>` section labeled
+  "Overlay for this era". This makes the relationship between character and era
+  too implicit. The next iteration should include: (1) explicit "Base canon" vs
+  "Current era override" labels inside each card, (2) always-visible current era
+  badge next to card title, (3) empty override state that says "No changes for
+  this era yet", and (4) a short inline example for character cards.
+- **Depends on / blocked by:** Reuses existing `WorldStore.setOverlay` model;
+  no schema migration required.

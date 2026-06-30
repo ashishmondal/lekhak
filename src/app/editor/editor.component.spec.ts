@@ -68,6 +68,39 @@ describe('EditorComponent', () => {
     expect(el.querySelector('.write')?.textContent).toContain('Write next');
   });
 
+  it('focus mode hides chrome and keeps core writing controls', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+    const el: HTMLElement = fixture.nativeElement;
+
+    comp.toggleFocusWriting();
+    fixture.detectChanges();
+
+    expect(el.querySelector('.editor')?.classList.contains('focus-writing')).toBe(true);
+    expect(el.querySelector('.bar')).toBeNull();
+    expect(el.querySelector('.library')).toBeNull();
+    expect(el.querySelector('.story')).toBeTruthy();
+    expect(el.querySelector('.beat')).toBeTruthy();
+    expect(el.querySelector('.write, .stop')).toBeTruthy();
+    expect(el.querySelector('.focus-toggle')?.textContent).toContain('Exit focus');
+  });
+
+  it('exits focus mode on Escape', async () => {
+    const fixture = await render(new FakeProvider());
+    const comp = fixture.componentInstance as any;
+
+    comp.toggleFocusWriting();
+    fixture.detectChanges();
+    expect(comp.focusWriting()).toBe(true);
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+
+    expect(comp.focusWriting()).toBe(false);
+  });
+
   it('Write next streams the continuation into the story box', async () => {
     const fixture = await render(new FakeProvider({ chunks: ['Once ', 'more.'] }));
     const comp = fixture.componentInstance as any;

@@ -88,6 +88,8 @@ export class EditorComponent implements OnInit {
   protected readonly styles = computed(() =>
     mergeWritingStyles(this.settings.customStyles()),
   );
+  /** Full-canvas writing mode: hide all chrome except writing controls. */
+  protected readonly focusWriting = signal(false);
   /** The per-story chapter cap, surfaced for the New chapter control. */
   protected readonly maxChapters = MAX_CHAPTERS;
 
@@ -233,6 +235,9 @@ export class EditorComponent implements OnInit {
       if (e.key !== 'Escape') {
         return;
       }
+      if (this.focusWriting()) {
+        this.focusWriting.set(false);
+      }
       for (const el of menus()) {
         if (el.open) {
           el.open = false;
@@ -360,6 +365,10 @@ export class EditorComponent implements OnInit {
     // but it locks once the story is created.
     this.newStoryStyleId.set(this.settings.style());
     this.showNewStory.set(true);
+  }
+
+  protected toggleFocusWriting(): void {
+    this.focusWriting.update((v) => !v);
   }
 
   /** Create a new story from the inline title form and open its first chapter. */

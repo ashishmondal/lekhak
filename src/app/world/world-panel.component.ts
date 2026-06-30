@@ -31,6 +31,7 @@ export class WorldPanelComponent implements OnInit {
   protected readonly newType = signal<CardType>('character');
   protected readonly newName = signal('');
   protected readonly newNotes = signal('');
+  protected readonly addError = signal('');
 
   /** Card id awaiting a "delete anyway?" confirmation. */
   protected readonly pendingDelete = signal<string | null>(null);
@@ -44,10 +45,26 @@ export class WorldPanelComponent implements OnInit {
   }
 
   protected async addCard(): Promise<void> {
+    this.addError.set('');
     const name = this.newName().trim();
     if (!name) {
       return;
     }
+
+    if (this.newType() === 'character') {
+      const duplicate = this.store
+        .cards()
+        .some(
+          (card) =>
+            card.type === 'character' &&
+            normalizeName(card.name) === normalizeName(name),
+        );
+      if (duplicate) {
+        this.addError.set('A character with this name already exists.');
+        return;
+      }
+    }
+
     await this.store.addCard({
       type: this.newType(),
       name,
@@ -103,4 +120,8 @@ export class WorldPanelComponent implements OnInit {
   protected cancelDelete(): void {
     this.pendingDelete.set(null);
   }
+}
+
+function normalizeName(value: string): string {
+  return value.trim().toLowerCase();
 }

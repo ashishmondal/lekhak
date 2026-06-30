@@ -56,6 +56,10 @@
       <button type="submit">Add card</button>
     </form>
 
+    @if (addError()) {
+      <p class="add-error" role="alert">{{ addError() }}</p>
+    }
+
     @if (store.cards().length === 0) {
       <p class="empty">No cards yet. Add the people, places, and lore the AI should remember.</p>
     }
