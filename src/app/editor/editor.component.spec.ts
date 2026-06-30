@@ -147,6 +147,26 @@ describe('EditorComponent', () => {
     ).toContain('API key');
   });
 
+  it('shows a specific network error message when provided', async () => {
+    const fixture = await render(
+      new FakeProvider({
+        error: new AiError(
+          'network',
+          'OpenAI requests are blocked in this browser environment (CORS).',
+        ),
+      }),
+    );
+    const comp = fixture.componentInstance as any;
+
+    await comp.writeNext();
+    fixture.detectChanges();
+
+    expect(comp.errorMessage()).toContain('CORS');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.banner')?.textContent,
+    ).toContain('CORS');
+  });
+
   it('redirects to Settings instead of generating when no key is set', async () => {
     const fixture = await render(new FakeProvider({ chunks: ['nope'] }));
     const comp = fixture.componentInstance as any;

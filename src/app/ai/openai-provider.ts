@@ -19,8 +19,8 @@ export interface OpenAiProviderConfig {
 /**
  * OpenAI chat-completions provider (BYOK, browser direct).
  *
- * CORS reality: OpenAI permits keyed browser calls, so no proxy is needed.
  * The key is supplied per instance (sourced from SettingsService upstream).
+ * In browser-only deployments, some OpenAI endpoints can fail with CORS.
  */
 export class OpenAiProvider implements AiProvider {
   readonly id = 'openai';
@@ -57,6 +57,13 @@ export class OpenAiProvider implements AiProvider {
         signal: opts.signal,
       });
     } catch (err) {
+      if (isLikelyCorsFailure(err)) {
+        throw new AiError(
+          'network',
+          'OpenAI requests are blocked in this browser environment (CORS). Use Gemini or route OpenAI through a server proxy.',
+          { cause: err },
+        );
+      }
       throw AiError.fromThrown(err, opts.signal);
     }
 
@@ -90,6 +97,13 @@ export class OpenAiProvider implements AiProvider {
       return false;
     }
   }
+}
+
+function isLikelyCorsFailure(err: unknown): boolean {
+  if (!(err instanceof TypeError)) {
+    return false;
+  }
+  return /failed to fetch|load failed|cors/i.test(err.message);
 }
 
 /** Pull `choices[0].delta.content` from one SSE data payload, tolerating noise. */

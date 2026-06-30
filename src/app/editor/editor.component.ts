@@ -107,7 +107,13 @@ export class EditorComponent implements OnInit {
 
   protected readonly errorMessage = computed(() => {
     const err = this.gen.error();
-    return err ? ERROR_COPY[err.kind] : '';
+    if (!err) {
+      return '';
+    }
+    if (err.kind === 'network' && err.message.trim() !== '') {
+      return err.message;
+    }
+    return ERROR_COPY[err.kind];
   });
 
   /** True when a write hit the browser storage quota; shown as a banner. */

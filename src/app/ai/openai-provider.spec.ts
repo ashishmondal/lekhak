@@ -69,6 +69,15 @@ describe('OpenAiProvider', () => {
     await expect(drain(provider)).rejects.toMatchObject({ kind: 'aborted' });
   });
 
+  it('maps a CORS-like fetch rejection to a guided network message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    const provider = new OpenAiProvider({ apiKey: 'k' });
+    await expect(drain(provider)).rejects.toMatchObject({
+      kind: 'network',
+      message: expect.stringContaining('CORS'),
+    });
+  });
+
   it('sends temperature, stream:true and the bearer key', async () => {
     const fetchMock = vi.fn().mockResolvedValue(sseResponse('data: [DONE]\n\n'));
     vi.stubGlobal('fetch', fetchMock);
